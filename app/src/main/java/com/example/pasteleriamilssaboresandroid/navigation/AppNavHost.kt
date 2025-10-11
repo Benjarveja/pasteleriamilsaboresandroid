@@ -13,21 +13,29 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavDestination
 import androidx.navigation.NavDestination.Companion.hierarchy
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
-import androidx.compose.ui.platform.LocalContext
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.navArgument
+import com.example.pasteleriamilssaboresandroid.data.repository.DemoAuthRepository
+import com.example.pasteleriamilssaboresandroid.data.storage.AuthStorage
 import com.example.pasteleriamilssaboresandroid.data.storage.CartStorage
+import com.example.pasteleriamilssaboresandroid.ui.auth.AuthViewModel
+import com.example.pasteleriamilssaboresandroid.ui.auth.AuthViewModelFactory
+import com.example.pasteleriamilssaboresandroid.ui.auth.LoginScreen
+import com.example.pasteleriamilssaboresandroid.ui.cart.CartScreen
 import com.example.pasteleriamilssaboresandroid.ui.cart.CartViewModel
 import com.example.pasteleriamilssaboresandroid.ui.cart.CartViewModelFactory
+import com.example.pasteleriamilssaboresandroid.ui.checkout.CheckoutScreen
 import com.example.pasteleriamilssaboresandroid.ui.news.NewsScreen
 import com.example.pasteleriamilssaboresandroid.ui.products.ProductsScreen
-import com.example.pasteleriamilssaboresandroid.ui.cart.CartScreen
-import com.example.pasteleriamilssaboresandroid.ui.checkout.CheckoutScreen
 
 sealed class Screen(val route: String) {
     data object Products : Screen("products")
@@ -35,6 +43,7 @@ sealed class Screen(val route: String) {
     data object Cart : Screen("cart")
     data object Checkout : Screen("checkout")
     data object ProductDetail : Screen("product/{id}") { const val ID = "id" }
+    data object Login : Screen("login?next={next}") { const val NEXT = "next" }
 }
 
 data class BottomItem(val route: String, val label: String, val icon: ImageVector)
@@ -43,7 +52,10 @@ data class BottomItem(val route: String, val label: String, val icon: ImageVecto
 fun AppNavHost(startDestination: String = Screen.Products.route) {
     val navController = rememberNavController()
     val context = LocalContext.current
+
     val cartVM: CartViewModel = viewModel(factory = CartViewModelFactory(CartStorage(context)))
+    val authVM: AuthViewModel = viewModel(factory = AuthViewModelFactory(DemoAuthRepository(), AuthStorage(context)))
+    val authUi by authVM.ui.collectAsStateWithLifecycle()
 
     val items = listOf(
         BottomItem(Screen.Products.route, "Productos", Icons.AutoMirrored.Filled.List),
@@ -86,19 +98,28 @@ fun AppNavHost(startDestination: String = Screen.Products.route) {
                 composable(Screen.Cart.route) {
                     CartScreen(
                         cartVM = cartVM,
-                        onCheckout = { navController.navigate(Screen.Checkout.route) }
+                        onCheckout = {
+                            if (authUi.user == null) {
+                                navController.navigate("login?next=${Screen.Checkout.route}")
+                            } else navController.navigate(Screen.Checkout.route)
+                        }
                     )
                 }
                 composable(Screen.Checkout.route) {
-                    CheckoutScreen(
-                        cartVM = cartVM,
-                        onFinish = {
-                            navController.navigate(Screen.Products.route) {
-                                launchSingleTop = true
-                                popUpTo(navController.graph.startDestinationId) { inclusive = false }
+                    if (authUi.user == null) {
+                        // Si no hay sesión, redirige a login con next=checkout
+                        navController.navigate("login?next=${Screen.Checkout.route}")
+                    } else {
+                        CheckoutScreen(
+                            cartVM = cartVM,
+                            onFinish = {
+                                navController.navigate(Screen.Products.route) {
+                                    launchSingleTop = true
+                                    popUpTo(navController.graph.startDestinationId) { inclusive = false }
+                                }
                             }
-                        }
-                    )
+                        )
+                    }
                 }
                 composable(Screen.ProductDetail.route) { backStackEntry ->
                     val id = backStackEntry.arguments?.getString(Screen.ProductDetail.ID) ?: ""
@@ -106,6 +127,25 @@ fun AppNavHost(startDestination: String = Screen.Products.route) {
                         productId = id,
                         cartVM = cartVM,
                         onBack = { navController.popBackStack() }
+                    )
+                }
+                composable(
+                    route = Screen.Login.route,
+                    arguments = listOf(navArgument(Screen.Login.NEXT) { type = NavType.StringType; nullable = true })
+                ) { backStackEntry ->
+                    val next = backStackEntry.arguments?.getString(Screen.Login.NEXT)
+                    LoginScreen(
+                        authVM = authVM,
+                        onLoggedIn = {
+                            if (!next.isNullOrBlank()) {
+                                navController.navigate(next) {
+                                    launchSingleTop = true
+                                    popUpTo(navController.graph.startDestinationId) { saveState = true }
+                                }
+                            } else {
+                                navController.popBackStack()
+                            }
+                        }
                     )
                 }
             }
