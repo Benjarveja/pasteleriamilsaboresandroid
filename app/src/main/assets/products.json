@@ -1,0 +1,50 @@
+{
+  "products": [
+    {
+      "id": "TC001",
+      "category": "Tortas Cuadradas",
+      "name": "Torta Cuadrada de Chocolate",
+      "price": 45000,
+      "description": "Deliciosa torta de chocolate con capas de ganache y un toque de avellanas. Personalizable con mensajes especiales.",
+      "popular": true
+    },
+    {
+      "id": "TC002",
+      "category": "Tortas Cuadradas",
+      "name": "Torta Cuadrada de Frutas",
+      "price": 50000,
+      "description": "Mezcla de frutas frescas y crema chantilly sobre bizcocho de vainilla, ideal para celebraciones."
+    },
+    {
+      "id": "TT001",
+      "category": "Tortas Circulares",
+      "name": "Torta Circular de Vainilla",
+      "price": 40000,
+      "description": "Bizcocho de vainilla con crema pastelera y glaseado dulce."
+    },
+    {
+      "id": "TT002",
+      "category": "Tortas Circulares",
+      "name": "Torta Circular de Manjar",
+      "price": 42000,
+      "description": "Torta tradicional con manjar y nueces.",
+      "popular": true
+    },
+    {
+      "id": "PG001",
+      "category": "Productos Sin Gluten",
+      "name": "Brownie Sin Gluten",
+      "price": 4000,
+      "description": "Brownie denso y rico, sin gluten."
+    },
+    {
+      "id": "PT001",
+      "category": "Pastelería Tradicional",
+      "name": "Empanada de Manzana",
+      "price": 3000,
+      "description": "Rellena de manzanas especiadas.",
+      "history": "Receta tradicional adaptada en distintas regiones."
+    }
+  ]
+}
+
