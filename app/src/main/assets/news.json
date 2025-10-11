@@ -1,0 +1,47 @@
+{
+  "news": [
+    {
+      "id": "guinness",
+      "title": "A 30 años del Guinness",
+      "excerpt": "Recordamos cuando colaboramos en la creación de la torta más grande del mundo y cómo ese hito marcó nuestra historia.",
+      "image": "news/noticiaguinness.jpg",
+      "href": "#"
+    },
+    {
+      "id": "cincuenta",
+      "title": "50 años de historia",
+      "excerpt": "Un recorrido por las raíces familiares que dieron vida a la pastelería y a sus recetas más clásicas.",
+      "image": "news/noticia50anos.jpg",
+      "href": "#"
+    },
+    {
+      "id": "recetas",
+      "title": "10 consejos y recetas para empezar",
+      "excerpt": "Tips rápidos para estudiantes que quieren preparar postres irresistibles en poco tiempo.",
+      "image": "news/noticiarecetas.jpg",
+      "href": "#"
+    },
+    {
+      "id": "dia-a-dia",
+      "title": "Un día desde adentro",
+      "excerpt": "Conoce cómo trabajamos tras bambalinas, las anécdotas del equipo y los secretos que hacen única a Mil Sabores.",
+      "image": "news/noticiadiaadia.jpg",
+      "href": "#"
+    },
+    {
+      "id": "duoc",
+      "title": "Mil Sabores en DuocUC",
+      "excerpt": "Participamos en la jornada gastronómica de DuocUC sede Antonio Varas compartiendo técnicas y experiencias.",
+      "image": "news/duocuc.png",
+      "href": "#"
+    },
+    {
+      "id": "nueva-sucursal",
+      "title": "¡Tenemos nueva sucursal!",
+      "excerpt": "Abrimos una nueva tienda para acercarnos aún más a tus celebraciones. Muy pronto conocerás todos los detalles.",
+      "image": "news/noticianuevasucursal.jpg",
+      "href": "#"
+    }
+  ]
+}
+
