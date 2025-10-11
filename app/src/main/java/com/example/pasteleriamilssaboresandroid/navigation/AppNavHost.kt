@@ -19,8 +19,11 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.pasteleriamilssaboresandroid.data.storage.CartStorage
 import com.example.pasteleriamilssaboresandroid.ui.cart.CartViewModel
+import com.example.pasteleriamilssaboresandroid.ui.cart.CartViewModelFactory
 import com.example.pasteleriamilssaboresandroid.ui.news.NewsScreen
 import com.example.pasteleriamilssaboresandroid.ui.products.ProductsScreen
 import com.example.pasteleriamilssaboresandroid.ui.cart.CartScreen
@@ -39,7 +42,8 @@ data class BottomItem(val route: String, val label: String, val icon: ImageVecto
 @Composable
 fun AppNavHost(startDestination: String = Screen.Products.route) {
     val navController = rememberNavController()
-    val cartVM: CartViewModel = viewModel()
+    val context = LocalContext.current
+    val cartVM: CartViewModel = viewModel(factory = CartViewModelFactory(CartStorage(context)))
 
     val items = listOf(
         BottomItem(Screen.Products.route, "Productos", Icons.AutoMirrored.Filled.List),

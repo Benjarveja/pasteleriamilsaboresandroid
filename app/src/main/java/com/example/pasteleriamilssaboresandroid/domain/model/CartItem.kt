@@ -1,5 +1,8 @@
 package com.example.pasteleriamilssaboresandroid.domain.model
 
+import kotlinx.serialization.Serializable
+
+@Serializable
 data class CartItem(
     val productId: String,
     val name: String,
