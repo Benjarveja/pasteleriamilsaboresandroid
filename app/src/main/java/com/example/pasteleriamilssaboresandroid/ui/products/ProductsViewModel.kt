@@ -18,6 +18,11 @@ data class ProductsUiState(
     val products: List<Product> = emptyList(),
     val query: String = "",
     val category: String? = null,
+    val categories: List<String> = emptyList(),
+    val minPrice: Int = 0,
+    val maxPrice: Int = 0,
+    val selectedMinPrice: Int = 0,
+    val selectedMaxPrice: Int = 0,
 )
 
 class ProductsViewModel(
@@ -36,7 +41,20 @@ class ProductsViewModel(
             _uiState.update { it.copy(isLoading = true, error = null) }
             runCatching { repository.getProducts() }
                 .onSuccess { list ->
-                    _uiState.update { it.copy(isLoading = false, products = list) }
+                    val categories = list.map { it.category }.distinct()
+                    val minPrice = list.minOfOrNull { it.price } ?: 0
+                    val maxPrice = list.maxOfOrNull { it.price } ?: 0
+                    _uiState.update {
+                        it.copy(
+                            isLoading = false,
+                            products = list,
+                            categories = categories,
+                            minPrice = minPrice,
+                            maxPrice = maxPrice,
+                            selectedMinPrice = minPrice,
+                            selectedMaxPrice = maxPrice
+                        )
+                    }
                 }
                 .onFailure { e ->
                     _uiState.update { it.copy(isLoading = false, error = e.message ?: "Error inesperado") }
@@ -48,12 +66,24 @@ class ProductsViewModel(
 
     fun onCategoryChange(newCategory: String?) { _uiState.update { it.copy(category = newCategory) } }
 
+    fun onPriceRangeChange(min: Int, max: Int) {
+        _uiState.update { state ->
+            val clippedMin = min.coerceAtLeast(state.minPrice)
+            val clippedMax = max.coerceAtMost(state.maxPrice)
+            state.copy(selectedMinPrice = clippedMin, selectedMaxPrice = clippedMax)
+        }
+    }
+
+    fun resetFilters() {
+        _uiState.update { s -> s.copy(query = "", category = null, selectedMinPrice = s.minPrice, selectedMaxPrice = s.maxPrice) }
+    }
+
     fun filtered(state: ProductsUiState = _uiState.value): List<Product> {
         val q = state.query.trim().lowercase()
         return state.products.filter { p ->
             (q.isEmpty() || p.name.lowercase().contains(q) || p.category.lowercase().contains(q)) &&
-            (state.category == null || state.category == p.category)
+            (state.category == null || state.category == p.category) &&
+            (p.price in state.selectedMinPrice..state.selectedMaxPrice)
         }
     }
 }
-
