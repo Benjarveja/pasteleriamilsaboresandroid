@@ -26,6 +26,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.RangeSlider
 import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -40,11 +41,12 @@ import coil.compose.rememberAsyncImagePainter
 import coil.request.ImageRequest
 import com.example.pasteleriamilssaboresandroid.data.repository.AssetsProductRepository
 import com.example.pasteleriamilssaboresandroid.domain.model.Product
+import com.example.pasteleriamilssaboresandroid.ui.cart.CartViewModel
 import com.example.pasteleriamilssaboresandroid.util.formatCLP
 import kotlin.math.roundToInt
 
 @Composable
-fun ProductsScreen() {
+fun ProductsScreen(cartVM: CartViewModel, onOpen: (String) -> Unit) {
     val context = LocalContext.current
     val vm: ProductsViewModel = viewModel(
         factory = ProductsViewModelFactory(AssetsProductRepository(context.assets))
@@ -127,13 +129,13 @@ fun ProductsScreen() {
                     Text("Reintentar")
                 }
             }
-            else -> ProductList(products = vm.filtered(ui))
+            else -> ProductList(products = vm.filtered(ui), onAdd = { cartVM.add(it) }, onOpen = onOpen)
         }
     }
 }
 
 @Composable
-private fun ProductList(products: List<Product>) {
+private fun ProductList(products: List<Product>, onAdd: (Product) -> Unit, onOpen: (String) -> Unit) {
     if (products.isEmpty()) {
         Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
             Text("No hay productos que coincidan")
@@ -145,12 +147,12 @@ private fun ProductList(products: List<Product>) {
         contentPadding = PaddingValues(bottom = 24.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        items(products, key = { it.id }) { p -> ProductItem(p) }
+        items(products, key = { it.id }) { p -> ProductItem(p, onAdd, onOpen) }
     }
 }
 
 @Composable
-private fun ProductItem(p: Product) {
+private fun ProductItem(p: Product, onAdd: (Product) -> Unit, onOpen: (String) -> Unit) {
     val context = LocalContext.current
     val assetPath = p.image?.let { "file:///android_asset/$it" }
     val painter = rememberAsyncImagePainter(
@@ -176,6 +178,11 @@ private fun ProductItem(p: Product) {
             Column(Modifier.weight(1f)) {
                 Text(text = p.name, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
                 Text(text = p.category, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.secondary)
+                Spacer(Modifier.size(8.dp))
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    OutlinedButton(onClick = { onAdd(p) }) { Text("Agregar al carrito") }
+                    TextButton(onClick = { onOpen(p.id) }) { Text("Ver detalle") }
+                }
             }
             Text(text = formatCLP(p.price), style = MaterialTheme.typography.titleMedium)
         }
