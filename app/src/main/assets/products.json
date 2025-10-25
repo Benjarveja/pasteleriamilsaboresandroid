@@ -5,7 +5,7 @@
       "category": "Tortas Cuadradas",
       "name": "Torta Cuadrada de Chocolate",
       "price": 45000,
-      "image": "products/TC001.jpg",
+      "image": "images/products/TC001.jpg",
       "description": "Deliciosa torta de chocolate con capas de ganache y un toque de avellanas. Personalizable con mensajes especiales.",
       "popular": true
     },
@@ -14,24 +14,76 @@
       "category": "Tortas Cuadradas",
       "name": "Torta Cuadrada de Frutas",
       "price": 50000,
-      "image": "products/TC002.jpg",
-      "description": "Mezcla de frutas frescas y crema chantilly sobre bizcocho de vainilla, ideal para celebraciones."
+      "image": "images/products/TC002.jpg",
+      "description": "Una mezcla de frutas frescas y crema chantilly sobre un suave bizcocho de vainilla, ideal para celebraciones."
     },
     {
       "id": "TT001",
       "category": "Tortas Circulares",
       "name": "Torta Circular de Vainilla",
       "price": 40000,
-      "image": "products/TT001.jpg",
-      "description": "Bizcocho de vainilla con crema pastelera y glaseado dulce."
+      "image": "images/products/TT001.jpg",
+      "description": "Bizcocho de vainilla clásico relleno con crema pastelera y cubierto con un glaseado dulce, perfecto para cualquier ocasión."
     },
     {
       "id": "TT002",
       "category": "Tortas Circulares",
       "name": "Torta Circular de Manjar",
       "price": 42000,
-      "image": "products/TT002.jpg",
-      "description": "Torta tradicional con manjar y nueces.",
+      "image": "images/products/TT002.jpg",
+      "description": "Torta tradicional chilena con manjar y nueces, un deleite para los amantes de los sabores dulces y clásicos.",
+      "popular": true
+    },
+    {
+      "id": "PI001",
+      "category": "Postres Individuales",
+      "name": "Mousse de Chocolate",
+      "price": 5000,
+      "image": "images/products/PI001.jpg",
+      "description": "Postre individual cremoso y suave, hecho con chocolate de alta calidad, ideal para los amantes del chocolate."
+    },
+    {
+      "id": "PI002",
+      "category": "Postres Individuales",
+      "name": "Tiramisú Clásico",
+      "price": 5500,
+      "image": "images/products/PI002.jpg",
+      "description": "Un postre italiano individual con capas de café, mascarpone y cacao, perfecto para finalizar cualquier comida.",
+      "popular": true
+    },
+    {
+      "id": "PSA001",
+      "category": "Productos Sin Azúcar",
+      "name": "Torta Sin Azúcar de Naranja",
+      "price": 48000,
+      "image": "images/products/PSA001.jpg",
+      "description": "Torta ligera y deliciosa, endulzada naturalmente, ideal para quienes buscan opciones más saludables."
+    },
+    {
+      "id": "PSA002",
+      "category": "Productos Sin Azúcar",
+      "name": "Cheesecake Sin Azúcar",
+      "price": 47000,
+      "image": "images/products/PSA002.jpg",
+      "description": "Suave y cremoso, este cheesecake es una opción perfecta para disfrutar sin culpa."
+    },
+    {
+      "id": "PT001",
+      "category": "Pastelería Tradicional",
+      "name": "Empanada de Manzana",
+      "price": 3000,
+      "image": "images/products/PT001.jpg",
+      "description": "Pastelería tradicional rellena de manzanas especiadas, perfecta para un dulce desayuno o merienda.",
+      "history": "La empanada de manzana es una receta que ha pasado de generación en generación, adaptándose en cada región con un toque local. Originalmente europea, se ha convertido en un clásico de la repostería chilena."
+    },
+    {
+      "id": "PT002",
+      "category": "Pastelería Tradicional",
+      "name": "Tarta de Santiago",
+      "price": 6000,
+      "image": "images/products/PT002.jpg",
+      "description": "Tradicional tarta española hecha con almendras, azúcar, y huevos, una delicia para los amantes de los postres clásicos.",
+      "history": "Originaria de Galicia, España, esta tarta tiene una historia que se remonta a la Edad Media. Se caracteriza por la cruz de Santiago espolvoreada en su superficie, un símbolo de la orden de caballeros.",
       "popular": true
     },
     {
@@ -39,17 +91,49 @@
       "category": "Productos Sin Gluten",
       "name": "Brownie Sin Gluten",
       "price": 4000,
-      "image": "products/PG001.jpg",
-      "description": "Brownie denso y rico, sin gluten."
+      "image": "images/products/PG001.jpg",
+      "description": "Rico y denso, este brownie es perfecto para quienes necesitan evitar el gluten sin sacrificar el sabor."
     },
     {
-      "id": "PT001",
-      "category": "Pastelería Tradicional",
-      "name": "Empanada de Manzana",
-      "price": 3000,
-      "image": "products/PT001.jpg",
-      "description": "Rellena de manzanas especiadas.",
-      "history": "Receta tradicional adaptada en distintas regiones."
+      "id": "PG002",
+      "category": "Productos Sin Gluten",
+      "name": "Pan Sin Gluten",
+      "price": 3500,
+      "image": "images/products/PG002.jpg",
+      "description": "Suave y esponjoso, ideal para sándwiches o para acompañar cualquier comida."
+    },
+    {
+      "id": "PV001",
+      "category": "Productos Vegana",
+      "name": "Torta Vegana de Chocolate",
+      "price": 50000,
+      "image": "images/products/PV001.jpg",
+      "description": "Torta de chocolate húmeda y deliciosa, hecha sin productos de origen animal, perfecta para veganos."
+    },
+    {
+      "id": "PV002",
+      "category": "Productos Vegana",
+      "name": "Galletas Veganas de Avena",
+      "price": 4500,
+      "image": "images/products/PV002.jpg",
+      "description": "Crujientes y sabrosas, estas galletas son una excelente opción para un snack saludable y vegano."
+    },
+    {
+      "id": "TE001",
+      "category": "Tortas Especiales",
+      "name": "Torta Especial de Cumpleaños",
+      "price": 55000,
+      "image": "images/products/TE001.jpg",
+      "description": "Diseñada especialmente para celebraciones, personalizable con decoraciones y mensajes únicos."
+    },
+    {
+      "id": "TE002",
+      "category": "Tortas Especiales",
+      "name": "Torta Especial de Boda",
+      "price": 60000,
+      "image": "images/products/TE002.jpg",
+      "description": "Elegante y deliciosa, esta torta está diseñada para ser el centro de atención en cualquier boda."
     }
   ]
 }
+

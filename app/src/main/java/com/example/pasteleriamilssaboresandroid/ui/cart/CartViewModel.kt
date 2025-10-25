@@ -3,7 +3,7 @@ package com.example.pasteleriamilssaboresandroid.ui.cart
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
-import com.example.pasteleriamilssaboresandroid.data.storage.CartStorage
+import com.example.pasteleriamilssaboresandroid.data.repository.CartRepository
 import com.example.pasteleriamilssaboresandroid.domain.model.CartItem
 import com.example.pasteleriamilssaboresandroid.domain.model.Product
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -20,23 +20,21 @@ data class CartUiState(
     val total: Int get() = subtotal // aquí se podrían sumar envíos o descuentos
 }
 
-class CartViewModel(private val storage: CartStorage? = null) : ViewModel() {
+class CartViewModel(private val repository: CartRepository) : ViewModel() {
     private val _ui = MutableStateFlow(CartUiState())
     val ui: StateFlow<CartUiState> = _ui.asStateFlow()
 
     init {
-        storage?.let { s ->
-            viewModelScope.launch {
-                s.itemsFlow.collect { persistedItems ->
-                    _ui.update { it.copy(items = persistedItems) }
-                }
+        viewModelScope.launch {
+            repository.cartItems.collect { persistedItems ->
+                _ui.update { it.copy(items = persistedItems) }
             }
         }
     }
 
     private fun setItems(newItems: List<CartItem>) {
         _ui.update { it.copy(items = newItems) }
-        viewModelScope.launch { storage?.save(newItems) }
+        viewModelScope.launch { repository.saveCart(newItems) }
     }
 
     fun add(product: Product, qty: Int = 1) {
@@ -77,11 +75,11 @@ class CartViewModel(private val storage: CartStorage? = null) : ViewModel() {
     fun clear() { setItems(emptyList()) }
 }
 
-class CartViewModelFactory(private val storage: CartStorage?) : ViewModelProvider.Factory {
+class CartViewModelFactory(private val repository: CartRepository) : ViewModelProvider.Factory {
     @Suppress("UNCHECKED_CAST")
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
         if (modelClass.isAssignableFrom(CartViewModel::class.java)) {
-            return CartViewModel(storage) as T
+            return CartViewModel(repository) as T
         }
         throw IllegalArgumentException("Unknown ViewModel class")
     }

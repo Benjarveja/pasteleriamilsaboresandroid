@@ -46,7 +46,7 @@ import com.example.pasteleriamilssaboresandroid.util.formatCLP
 import kotlin.math.roundToInt
 
 @Composable
-fun ProductsScreen(cartVM: CartViewModel, onOpen: (String) -> Unit) {
+fun ProductsScreen(cartVM: CartViewModel, onOpen: (String) -> Unit, onShowSnackbar: (String) -> Unit) {
     val context = LocalContext.current
     val vm: ProductsViewModel = viewModel(
         factory = ProductsViewModelFactory(AssetsProductRepository(context.assets))
@@ -66,8 +66,16 @@ fun ProductsScreen(cartVM: CartViewModel, onOpen: (String) -> Unit) {
             label = { Text("Buscar productos") }
         )
 
+        // Botón para mostrar/ocultar filtros
+        Button(
+            onClick = { vm.toggleFilters() },
+            modifier = Modifier.padding(top = 8.dp)
+        ) {
+            Text(if (ui.filtersVisible) "Ocultar filtros" else "Mostrar filtros")
+        }
+
         // Filtros
-        if (!ui.isLoading && ui.products.isNotEmpty()) {
+        if (ui.filtersVisible && !ui.isLoading && ui.products.isNotEmpty()) {
             Text(
                 text = "Filtros",
                 style = MaterialTheme.typography.titleMedium,
@@ -129,7 +137,14 @@ fun ProductsScreen(cartVM: CartViewModel, onOpen: (String) -> Unit) {
                     Text("Reintentar")
                 }
             }
-            else -> ProductList(products = vm.filtered(ui), onAdd = { cartVM.add(it) }, onOpen = onOpen)
+            else -> ProductList(
+                products = vm.filtered(ui),
+                onAdd = {
+                    cartVM.add(it)
+                    onShowSnackbar("${it.name} agregado al carrito")
+                },
+                onOpen = onOpen
+            )
         }
     }
 }
@@ -179,7 +194,7 @@ private fun ProductItem(p: Product, onAdd: (Product) -> Unit, onOpen: (String) -
                 Text(text = p.name, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
                 Text(text = p.category, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.secondary)
                 Spacer(Modifier.size(8.dp))
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                     OutlinedButton(onClick = { onAdd(p) }) { Text("Agregar al carrito") }
                     TextButton(onClick = { onOpen(p.id) }) { Text("Ver detalle") }
                 }

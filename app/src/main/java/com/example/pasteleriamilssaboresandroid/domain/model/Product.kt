@@ -1,12 +1,12 @@
 package com.example.pasteleriamilssaboresandroid.domain.model
 
 data class Product(
-    val id: String,
-    val name: String,
+    val productId: String,
+    val productName: String,
     val price: Int,
     val category: String,
-    val image: String? = null,
-    val description: String? = null,
+    val productImage: String? = null,
+    val productDescription: String? = null,
     val popular: Boolean = false,
     val history: String? = null,
-)
+) : ContentItem(productId, productName, productImage, productDescription)

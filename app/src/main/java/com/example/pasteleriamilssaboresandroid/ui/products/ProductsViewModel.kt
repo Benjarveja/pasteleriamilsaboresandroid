@@ -2,7 +2,6 @@ package com.example.pasteleriamilssaboresandroid.ui.products
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.pasteleriamilssaboresandroid.data.repository.InMemoryProductRepository
 import com.example.pasteleriamilssaboresandroid.data.repository.ProductRepository
 import com.example.pasteleriamilssaboresandroid.domain.model.Product
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -23,10 +22,11 @@ data class ProductsUiState(
     val maxPrice: Int = 0,
     val selectedMinPrice: Int = 0,
     val selectedMaxPrice: Int = 0,
+    val filtersVisible: Boolean = false
 )
 
 class ProductsViewModel(
-    private val repository: ProductRepository = InMemoryProductRepository()
+    private val repository: ProductRepository
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(ProductsUiState(isLoading = true))
@@ -72,6 +72,10 @@ class ProductsViewModel(
             val clippedMax = max.coerceAtMost(state.maxPrice)
             state.copy(selectedMinPrice = clippedMin, selectedMaxPrice = clippedMax)
         }
+    }
+
+    fun toggleFilters() {
+        _uiState.update { it.copy(filtersVisible = !it.filtersVisible) }
     }
 
     fun resetFilters() {

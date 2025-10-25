@@ -20,12 +20,12 @@ class AssetsProductRepository(private val assets: AssetManager) : ProductReposit
                 val history = o.optString("history", "").takeIf { it.isNotBlank() }
                 add(
                     Product(
-                        id = o.optString("id"),
-                        name = o.optString("name"),
+                        productId = o.optString("id"),
+                        productName = o.optString("name"),
                         price = o.optInt("price"),
                         category = o.optString("category"),
-                        image = image,
-                        description = description,
+                        productImage = image,
+                        productDescription = description,
                         popular = o.optBoolean("popular", false),
                         history = history
                     )
