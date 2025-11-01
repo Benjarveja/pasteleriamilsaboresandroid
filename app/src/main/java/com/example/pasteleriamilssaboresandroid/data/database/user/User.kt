@@ -15,6 +15,6 @@ data class User(
     val birthDate: String,
     val region: String,
     val comuna: String,
-    val street: String
+    val street: String,
+    val profilePictureUri: String? = null
 )
-

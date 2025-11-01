@@ -1,7 +1,11 @@
 package com.example.pasteleriamilssaboresandroid.navigation
 
+import android.net.Uri
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.filled.Home
@@ -30,15 +34,19 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
-import androidx.navigation.NavDestination
 import androidx.navigation.NavDestination.Companion.hierarchy
+import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import coil.compose.rememberAsyncImagePainter
 import com.example.pasteleriamilssaboresandroid.PasteleriaApp
 import com.example.pasteleriamilssaboresandroid.ui.cart.CartScreen
 import com.example.pasteleriamilssaboresandroid.ui.cart.CartViewModel
@@ -54,6 +62,7 @@ import com.example.pasteleriamilssaboresandroid.ui.theme.screen.user.ProfileScre
 import com.example.pasteleriamilssaboresandroid.ui.theme.screen.user.RegisterScreen
 import com.example.pasteleriamilssaboresandroid.viewmodel.LoginResult
 import com.example.pasteleriamilssaboresandroid.viewmodel.RegisterResult
+import com.example.pasteleriamilssaboresandroid.viewmodel.UpdateResult
 import com.example.pasteleriamilssaboresandroid.viewmodel.UserViewModel
 import com.example.pasteleriamilssaboresandroid.viewmodel.UserViewModelFactory
 import kotlinx.coroutines.launch
@@ -70,6 +79,7 @@ fun AppNavHost(startDestination: String = Screen.Home.route) {
     val cartUi by cartVM.ui.collectAsStateWithLifecycle()
     val loginResult by userVM.loginResult.collectAsStateWithLifecycle()
     val registerResult by userVM.registerResult.collectAsStateWithLifecycle()
+    val updateResult by userVM.updateResult.collectAsStateWithLifecycle()
     val loggedInUser by userVM.loggedInUser.collectAsStateWithLifecycle()
 
     val snackbarHostState = remember { SnackbarHostState() }
@@ -102,7 +112,16 @@ fun AppNavHost(startDestination: String = Screen.Home.route) {
                         } else {
                             Box {
                                 IconButton(onClick = { showMenu = !showMenu }) {
-                                    Icon(Icons.Filled.Person, contentDescription = "User Menu")
+                                    loggedInUser?.profilePictureUri?.let { uriString ->
+                                        Image(
+                                            painter = rememberAsyncImagePainter(model = Uri.parse(uriString)),
+                                            contentDescription = "User Profile Picture",
+                                            modifier = Modifier
+                                                .size(32.dp)
+                                                .clip(CircleShape),
+                                            contentScale = ContentScale.Crop
+                                        )
+                                    } ?: Icon(Icons.Filled.Person, contentDescription = "User Menu")
                                 }
                                 DropdownMenu(
                                     expanded = showMenu,
@@ -140,7 +159,7 @@ fun AppNavHost(startDestination: String = Screen.Home.route) {
             if (showBottomBar) {
                 NavigationBar {
                     items.forEach { item ->
-                        val selected = currentDestination.isRouteInHierarchy(item.route)
+                        val selected = currentDestination?.hierarchy?.any { it.route == item.route } == true
                         NavigationBarItem(
                             icon = {
                                 if (item.route == Screen.Cart.route) {
@@ -179,35 +198,18 @@ fun AppNavHost(startDestination: String = Screen.Home.route) {
                 }
                 composable(Screen.LoginFlow.route) {
                     LoginScreen(
-                        onLoginClick = { email, password ->
-                            userVM.login(email, password)
-                        },
-                        onContinueAsGuestClick = {
-                            navController.navigate(Screen.Home.route) {
-                                popUpTo(Screen.LoginFlow.route) { inclusive = true }
-                            }
-                        },
-                        onRegisterClick = {
-                            navController.navigate(Screen.Register.route)
-                        }
+                        onLoginClick = { email, password -> userVM.login(email, password) },
+                        onContinueAsGuestClick = { navController.popBackStack() },
+                        onRegisterClick = { navController.navigate(Screen.Register.route) },
+                        onBackClick = { navController.popBackStack() }
                     )
                 }
                 composable(Screen.Register.route) {
                     RegisterScreen(
                         onRegisterClick = { firstName, lastName, email, password, phone, run, birthDate, region, comuna, street ->
-                            userVM.registerUser(
-                                firstName = firstName,
-                                lastName = lastName,
-                                email = email,
-                                password = password,
-                                phone = phone,
-                                run = run,
-                                birthDate = birthDate,
-                                region = region,
-                                comuna = comuna,
-                                street = street
-                            )
-                        }
+                            userVM.registerUser(firstName, lastName, email, password, phone, run, birthDate, region, comuna, street)
+                        },
+                        onBackClick = { navController.popBackStack() }
                     )
                 }
                 composable(Screen.Products.route) {
@@ -215,9 +217,7 @@ fun AppNavHost(startDestination: String = Screen.Home.route) {
                         cartVM = cartVM,
                         onOpen = { id -> navController.navigate("product/$id") },
                         onShowSnackbar = { message ->
-                            scope.launch {
-                                snackbarHostState.showSnackbar(message)
-                            }
+                            scope.launch { snackbarHostState.showSnackbar(message) }
                         }
                     )
                 }
@@ -225,9 +225,7 @@ fun AppNavHost(startDestination: String = Screen.Home.route) {
                 composable(Screen.Cart.route) {
                     CartScreen(
                         cartVM = cartVM,
-                        onCheckout = {
-                            navController.navigate(Screen.Checkout.route)
-                        }
+                        onCheckout = { navController.navigate(Screen.Checkout.route) }
                     )
                 }
                 composable(Screen.Checkout.route) {
@@ -235,7 +233,6 @@ fun AppNavHost(startDestination: String = Screen.Home.route) {
                         cartVM = cartVM,
                         onFinish = {
                             navController.navigate(Screen.Products.route) {
-                                launchSingleTop = true
                                 popUpTo(navController.graph.startDestinationId) { inclusive = false }
                             }
                         }
@@ -259,18 +256,28 @@ fun AppNavHost(startDestination: String = Screen.Home.route) {
         }
     }
 
+    LaunchedEffect(loggedInUser, currentDestination) {
+        if (loggedInUser == null) {
+            val protectedRoutes = listOf(Screen.Profile.route, Screen.Orders.route, Screen.Checkout.route)
+            if (currentDestination?.route in protectedRoutes) {
+                navController.navigate(Screen.Home.route) {
+                    popUpTo(navController.graph.findStartDestination().id) {
+                        inclusive = true
+                    }
+                    launchSingleTop = true
+                }
+            }
+        }
+    }
+
     LaunchedEffect(loginResult) {
         when (val result = loginResult) {
             is LoginResult.Success -> {
-                navController.navigate(Screen.Home.route) {
-                    popUpTo(Screen.LoginFlow.route) { inclusive = true }
-                }
+                navController.popBackStack()
                 userVM.resetLoginState()
             }
             is LoginResult.Error -> {
-                scope.launch {
-                    snackbarHostState.showSnackbar(result.message)
-                }
+                scope.launch { snackbarHostState.showSnackbar(result.message) }
                 userVM.resetLoginState()
             }
             else -> {}
@@ -280,22 +287,28 @@ fun AppNavHost(startDestination: String = Screen.Home.route) {
     LaunchedEffect(registerResult) {
         when (val result = registerResult) {
             is RegisterResult.Success -> {
-                navController.navigate(Screen.Home.route) {
-                    popUpTo(Screen.LoginFlow.route) { inclusive = true }
-                }
+                navController.popBackStack()
                 userVM.resetRegisterState()
             }
             is RegisterResult.Error -> {
-                scope.launch {
-                    snackbarHostState.showSnackbar(result.message)
-                }
+                scope.launch { snackbarHostState.showSnackbar(result.message) }
                 userVM.resetRegisterState()
             }
             else -> {}
         }
     }
-}
 
-private fun NavDestination?.isRouteInHierarchy(route: String): Boolean {
-    return this?.hierarchy?.any { it.route == route } == true
+    LaunchedEffect(updateResult) {
+        when (val result = updateResult) {
+            is UpdateResult.Success -> {
+                scope.launch { snackbarHostState.showSnackbar("Perfil actualizado correctamente") }
+                userVM.resetUpdateState()
+            }
+            is UpdateResult.Error -> {
+                scope.launch { snackbarHostState.showSnackbar(result.message) }
+                userVM.resetUpdateState()
+            }
+            else -> {}
+        }
+    }
 }

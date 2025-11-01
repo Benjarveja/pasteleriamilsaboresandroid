@@ -9,6 +9,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
@@ -24,6 +25,12 @@ sealed class RegisterResult {
     data class Error(val message: String) : RegisterResult()
 }
 
+sealed class UpdateResult {
+    object Idle : UpdateResult()
+    object Success : UpdateResult()
+    data class Error(val message: String) : UpdateResult()
+}
+
 class UserViewModel(private val repository: UserRepository) : ViewModel() {
 
     private val _loginResult = MutableStateFlow<LoginResult>(LoginResult.Idle)
@@ -31,6 +38,9 @@ class UserViewModel(private val repository: UserRepository) : ViewModel() {
 
     private val _registerResult = MutableStateFlow<RegisterResult>(RegisterResult.Idle)
     val registerResult: StateFlow<RegisterResult> = _registerResult.asStateFlow()
+
+    private val _updateResult = MutableStateFlow<UpdateResult>(UpdateResult.Idle)
+    val updateResult: StateFlow<UpdateResult> = _updateResult.asStateFlow()
 
     private val _loggedInUser = MutableStateFlow<User?>(null)
     val loggedInUser: StateFlow<User?> = _loggedInUser.asStateFlow()
@@ -67,6 +77,10 @@ class UserViewModel(private val repository: UserRepository) : ViewModel() {
         _registerResult.value = RegisterResult.Idle
     }
 
+    fun resetUpdateState() {
+        _updateResult.value = UpdateResult.Idle
+    }
+
     fun registerUser(
         firstName: String,
         lastName: String,
@@ -99,6 +113,34 @@ class UserViewModel(private val repository: UserRepository) : ViewModel() {
                 _registerResult.value = RegisterResult.Success
             } catch (e: Exception) {
                 _registerResult.value = RegisterResult.Error("Failed to register user: ${e.message}")
+            }
+        }
+    }
+
+    fun updateUser(user: User) {
+        viewModelScope.launch {
+            try {
+                withContext(Dispatchers.IO) {
+                    repository.updateUser(user)
+                }
+                _loggedInUser.value = user // Update logged in user state
+                _updateResult.value = UpdateResult.Success
+            } catch (e: Exception) {
+                _updateResult.value = UpdateResult.Error("Failed to update user: ${e.message}")
+            }
+        }
+    }
+
+    fun updateUserProfilePicture(userId: Int, uri: String) {
+        viewModelScope.launch {
+            try {
+                withContext(Dispatchers.IO) {
+                    repository.updateUserProfilePicture(userId, uri)
+                }
+                _loggedInUser.update { it?.copy(profilePictureUri = uri) }
+                _updateResult.value = UpdateResult.Success
+            } catch (e: Exception) {
+                _updateResult.value = UpdateResult.Error("Failed to update profile picture: ${e.message}")
             }
         }
     }

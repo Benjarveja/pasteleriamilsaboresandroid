@@ -12,5 +12,12 @@ class UserRepository(private val userDao: UserDao) {
     suspend fun findByEmail(email: String): User? {
         return userDao.findByEmail(email)
     }
-}
 
+    suspend fun updateUser(user: User) {
+        userDao.update(user)
+    }
+
+    suspend fun updateUserProfilePicture(userId: Int, uri: String) {
+        userDao.updateUserProfilePicture(userId, uri)
+    }
+}
