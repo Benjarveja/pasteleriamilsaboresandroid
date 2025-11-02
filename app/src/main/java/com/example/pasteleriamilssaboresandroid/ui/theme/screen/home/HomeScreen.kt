@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.pager.HorizontalPager
@@ -123,26 +124,26 @@ fun HomeScreen(
 fun RecommendedProductCard(product: Product) {
     val painter = rememberAsyncImagePainter(
         model = ImageRequest.Builder(LocalContext.current)
-            .data("file:///android_asset/${product.productImage}")
+            .data("file:///android_asset/${product.image}")
             .crossfade(true)
             .build()
     )
     Card(
-        modifier = Modifier.fillMaxWidth(0.8f),
+        modifier = Modifier.width(200.dp),
         elevation = CardDefaults.cardElevation(4.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.tertiary)
     ) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             Image(
                 painter = painter, 
-                contentDescription = product.productName, 
+                contentDescription = product.name,
                 modifier = Modifier
                     .height(150.dp)
                     .fillMaxWidth()
                     .clip(MaterialTheme.shapes.medium),
                 contentScale = ContentScale.Crop
             )
-            Text(product.productName, style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(8.dp))
+            Text(product.name, style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(8.dp))
         }
     }
 }
