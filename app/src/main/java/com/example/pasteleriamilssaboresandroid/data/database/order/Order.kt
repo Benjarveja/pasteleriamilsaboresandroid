@@ -9,7 +9,7 @@ data class Order(
     @PrimaryKey(autoGenerate = true) val id: Int = 0,
     val userId: Int,
     val code: String,
-    val createdAt: String,
+    val createdAt: Long,
     val items: List<CartItem>,
     val subtotal: Int,
     val total: Int,

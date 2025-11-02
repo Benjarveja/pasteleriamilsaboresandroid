@@ -2,19 +2,19 @@ package com.example.pasteleriamilssaboresandroid.ui.checkout
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.pasteleriamilssaboresandroid.data.database.order.OrderRepository
 import com.example.pasteleriamilssaboresandroid.data.database.user.User
 import com.example.pasteleriamilssaboresandroid.domain.model.CartItem
-import com.example.pasteleriamilssaboresandroid.domain.model.Order
-import com.example.pasteleriamilssaboresandroid.util.*
+import com.example.pasteleriamilssaboresandroid.util.computeDiscounts
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import java.util.Date
 
 data class CheckoutUiState(
-    val order: Order? = null,
+    val order: com.example.pasteleriamilssaboresandroid.domain.model.Order? = null,
     val isLoading: Boolean = false,
     val error: String? = null,
     val pricing: com.example.pasteleriamilssaboresandroid.util.PricingResult,
@@ -41,7 +41,7 @@ data class CheckoutFormData(
     val couponCode: String = ""
 )
 
-class CheckoutViewModel : ViewModel() {
+class CheckoutViewModel(private val orderRepository: OrderRepository) : ViewModel() {
     private val _uiState = MutableStateFlow(CheckoutUiState(pricing = computeDiscounts(0, null)))
     val uiState: StateFlow<CheckoutUiState> = _uiState.asStateFlow()
 
@@ -67,8 +67,7 @@ class CheckoutViewModel : ViewModel() {
                     region = user.region
                 )
             } else {
-                // Clear user-specific data if user is null (logged out)
-                CheckoutFormData(couponCode = coupon) // Keep coupon
+                CheckoutFormData(couponCode = coupon)
             }
         }
         validateForm()
@@ -88,20 +87,20 @@ class CheckoutViewModel : ViewModel() {
         val errors = mutableMapOf<String, String>()
         val data = _formData.value
 
-        if (!isValidRun(data.run)) errors["run"] = "RUN no válido"
-        if (!isNonEmpty(data.firstName)) errors["firstName"] = "El nombre es requerido"
-        if (!isNonEmpty(data.lastName)) errors["lastName"] = "El apellido es requerido"
-        if (!isValidEmail(data.email)) errors["email"] = "Email no válido"
-        if (!isValidChileanPhone(data.phone)) errors["phone"] = "Teléfono no válido"
-        if (!isValidBirthDate(data.birthDate)) errors["birthDate"] = "Fecha de nacimiento no válida"
+        if (!com.example.pasteleriamilssaboresandroid.util.isValidRun(data.run)) errors["run"] = "RUN no válido"
+        if (!com.example.pasteleriamilssaboresandroid.util.isNonEmpty(data.firstName)) errors["firstName"] = "El nombre es requerido"
+        if (!com.example.pasteleriamilssaboresandroid.util.isNonEmpty(data.lastName)) errors["lastName"] = "El apellido es requerido"
+        if (!com.example.pasteleriamilssaboresandroid.util.isValidEmail(data.email)) errors["email"] = "Email no válido"
+        if (!com.example.pasteleriamilssaboresandroid.util.isValidChileanPhone(data.phone)) errors["phone"] = "Teléfono no válido"
+        if (!com.example.pasteleriamilssaboresandroid.util.isValidBirthDate(data.birthDate)) errors["birthDate"] = "Fecha de nacimiento no válida"
 
         if (data.deliveryOption == "delivery") {
-            if (!isNonEmpty(data.street)) errors["street"] = "La calle es requerida"
-            if (!isNonEmpty(data.comuna)) errors["comuna"] = "La comuna es requerida"
-            if (!isNonEmpty(data.region)) errors["region"] = "La región es requerida"
+            if (!com.example.pasteleriamilssaboresandroid.util.isNonEmpty(data.street)) errors["street"] = "La calle es requerida"
+            if (!com.example.pasteleriamilssaboresandroid.util.isNonEmpty(data.comuna)) errors["comuna"] = "La comuna es requerida"
+            if (!com.example.pasteleriamilssaboresandroid.util.isNonEmpty(data.region)) errors["region"] = "La región es requerida"
         } else {
-            if (!isNonEmpty(data.branch)) errors["branch"] = "La sucursal es requerida"
-            if (!isNonEmpty(data.pickupTimeSlot)) errors["pickupTimeSlot"] = "El horario es requerido"
+            if (!com.example.pasteleriamilssaboresandroid.util.isNonEmpty(data.branch)) errors["branch"] = "La sucursal es requerida"
+            if (!com.example.pasteleriamilssaboresandroid.util.isNonEmpty(data.pickupTimeSlot)) errors["pickupTimeSlot"] = "El horario es requerido"
         }
 
         _uiState.update { it.copy(validationErrors = errors, isFormValid = errors.isEmpty()) }
@@ -113,11 +112,12 @@ class CheckoutViewModel : ViewModel() {
 
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true, error = null) }
+            delay(5000) // Simulate processing
 
-            val order = Order(
-                code = "MS-${Date().time.toString().takeLast(6)}",
-                createdAt = Date().toString(),
-                userId = user?.id?.toString(),
+            val order = com.example.pasteleriamilssaboresandroid.data.database.order.Order(
+                code = "MS-${System.currentTimeMillis().toString().takeLast(6)}",
+                createdAt = System.currentTimeMillis(),
+                userId = user?.id ?: 0,
                 items = items,
                 subtotal = uiState.value.pricing.subtotal,
                 total = uiState.value.pricing.total,
@@ -131,11 +131,35 @@ class CheckoutViewModel : ViewModel() {
                 contactName = "${_formData.value.firstName} ${_formData.value.lastName}",
                 contactEmail = _formData.value.email,
                 contactPhone = _formData.value.phone,
-                contactBirthDate = _formData.value.birthDate,
-                discounts = null // TODO: Implement discounts display
+                contactBirthDate = _formData.value.birthDate
             )
 
-            _uiState.update { it.copy(isLoading = false, order = order) }
+            if (user != null) {
+                orderRepository.insert(order)
+            }
+            
+            val domainOrder = com.example.pasteleriamilssaboresandroid.domain.model.Order(
+                code = order.code,
+                createdAt = java.text.SimpleDateFormat("dd/MM/yyyy HH:mm", java.util.Locale.getDefault()).format(order.createdAt),
+                userId = order.userId.toString(),
+                items = order.items,
+                subtotal = order.subtotal,
+                total = order.total,
+                deliveryOption = order.deliveryOption,
+                address = order.address,
+                branch = order.branch,
+                pickupDate = order.pickupDate,
+                pickupTimeSlot = order.pickupTimeSlot,
+                paymentMethod = order.paymentMethod,
+                notes = order.notes,
+                contactName = order.contactName,
+                contactEmail = order.contactEmail,
+                contactPhone = order.contactPhone,
+                contactBirthDate = order.contactBirthDate,
+                discounts = null
+            )
+
+            _uiState.update { it.copy(isLoading = false, order = domainOrder) }
         }
     }
 }

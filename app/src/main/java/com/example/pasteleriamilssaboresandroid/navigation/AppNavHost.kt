@@ -20,12 +20,14 @@ import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -48,22 +50,28 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import coil.compose.rememberAsyncImagePainter
 import com.example.pasteleriamilssaboresandroid.PasteleriaApp
+import com.example.pasteleriamilssaboresandroid.data.repository.AssetsProductRepository
 import com.example.pasteleriamilssaboresandroid.ui.cart.CartScreen
 import com.example.pasteleriamilssaboresandroid.ui.cart.CartViewModel
 import com.example.pasteleriamilssaboresandroid.ui.cart.CartViewModelFactory
 import com.example.pasteleriamilssaboresandroid.ui.checkout.CheckoutScreen
 import com.example.pasteleriamilssaboresandroid.ui.checkout.CheckoutViewModel
+import com.example.pasteleriamilssaboresandroid.ui.checkout.CheckoutViewModelFactory
 import com.example.pasteleriamilssaboresandroid.ui.checkout.OrderConfirmationScreen
 import com.example.pasteleriamilssaboresandroid.ui.checkout.ProcessingOrderScreen
 import com.example.pasteleriamilssaboresandroid.ui.news.NewsScreen
 import com.example.pasteleriamilssaboresandroid.ui.products.ProductDetailScreen
 import com.example.pasteleriamilssaboresandroid.ui.products.ProductsScreen
 import com.example.pasteleriamilssaboresandroid.ui.theme.screen.home.HomeScreen
+import com.example.pasteleriamilssaboresandroid.ui.theme.screen.home.HomeViewModel
+import com.example.pasteleriamilssaboresandroid.ui.theme.screen.home.HomeViewModelFactory
 import com.example.pasteleriamilssaboresandroid.ui.theme.screen.user.LoginScreen
 import com.example.pasteleriamilssaboresandroid.ui.theme.screen.user.OrdersScreen
 import com.example.pasteleriamilssaboresandroid.ui.theme.screen.user.ProfileScreen
 import com.example.pasteleriamilssaboresandroid.ui.theme.screen.user.RegisterScreen
 import com.example.pasteleriamilssaboresandroid.viewmodel.LoginResult
+import com.example.pasteleriamilssaboresandroid.viewmodel.OrdersViewModel
+import com.example.pasteleriamilssaboresandroid.viewmodel.OrdersViewModelFactory
 import com.example.pasteleriamilssaboresandroid.viewmodel.RegisterResult
 import com.example.pasteleriamilssaboresandroid.viewmodel.UpdateResult
 import com.example.pasteleriamilssaboresandroid.viewmodel.UserViewModel
@@ -79,7 +87,9 @@ fun AppNavHost(startDestination: String = Screen.Home.route) {
 
     val cartVM: CartViewModel = viewModel(factory = CartViewModelFactory(application.cartRepository))
     val userVM: UserViewModel = viewModel(factory = UserViewModelFactory(application.userRepository))
-    val checkoutVM: CheckoutViewModel = viewModel()
+    val checkoutVM: CheckoutViewModel = viewModel(factory = CheckoutViewModelFactory(application.orderRepository))
+    val ordersVM: OrdersViewModel = viewModel(factory = OrdersViewModelFactory(application.orderRepository))
+    val homeVM: HomeViewModel = viewModel(factory = HomeViewModelFactory(AssetsProductRepository(context.assets)))
 
     val cartUi by cartVM.ui.collectAsStateWithLifecycle()
     val loginResult by userVM.loginResult.collectAsStateWithLifecycle()
@@ -122,6 +132,9 @@ fun AppNavHost(startDestination: String = Screen.Home.route) {
             if (showBottomBar) {
                 CenterAlignedTopAppBar(
                     title = { Text(text = "Pastelería MilSabores") },
+                    colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
+                        containerColor = MaterialTheme.colorScheme.tertiary
+                    ),
                     actions = {
                         if (loggedInUser == null) {
                             IconButton(onClick = { navController.navigate(Screen.LoginFlow.route) }) {
@@ -212,7 +225,7 @@ fun AppNavHost(startDestination: String = Screen.Home.route) {
         Box(modifier = Modifier.padding(innerPadding)) {
             NavHost(navController = navController, startDestination = startDestination) {
                 composable(Screen.Home.route) {
-                    HomeScreen(onLoginClick = { navController.navigate(Screen.LoginFlow.route) })
+                    HomeScreen(homeViewModel = homeVM, onLoginClick = { navController.navigate(Screen.LoginFlow.route) })
                 }
                 composable(Screen.LoginFlow.route) {
                     LoginScreen(
@@ -285,7 +298,7 @@ fun AppNavHost(startDestination: String = Screen.Home.route) {
                     ProfileScreen(userViewModel = userVM)
                 }
                 composable(Screen.Orders.route) {
-                    OrdersScreen()
+                    OrdersScreen(ordersViewModel = ordersVM, userViewModel = userVM)
                 }
             }
         }

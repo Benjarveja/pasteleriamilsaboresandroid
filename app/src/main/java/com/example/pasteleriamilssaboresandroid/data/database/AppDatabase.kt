@@ -10,7 +10,7 @@ import com.example.pasteleriamilssaboresandroid.data.database.order.OrderDao
 import com.example.pasteleriamilssaboresandroid.data.database.user.User
 import com.example.pasteleriamilssaboresandroid.data.database.user.UserDao
 
-@Database(entities = [User::class, Order::class], version = 4, exportSchema = false)
+@Database(entities = [User::class, Order::class], version = 5, exportSchema = false)
 @TypeConverters(Converters::class)
 abstract class AppDatabase : RoomDatabase() {
     abstract fun userDao(): UserDao
