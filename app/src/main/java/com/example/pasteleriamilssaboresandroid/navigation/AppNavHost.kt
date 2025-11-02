@@ -52,6 +52,9 @@ import com.example.pasteleriamilssaboresandroid.ui.cart.CartScreen
 import com.example.pasteleriamilssaboresandroid.ui.cart.CartViewModel
 import com.example.pasteleriamilssaboresandroid.ui.cart.CartViewModelFactory
 import com.example.pasteleriamilssaboresandroid.ui.checkout.CheckoutScreen
+import com.example.pasteleriamilssaboresandroid.ui.checkout.CheckoutViewModel
+import com.example.pasteleriamilssaboresandroid.ui.checkout.OrderConfirmationScreen
+import com.example.pasteleriamilssaboresandroid.ui.checkout.ProcessingOrderScreen
 import com.example.pasteleriamilssaboresandroid.ui.news.NewsScreen
 import com.example.pasteleriamilssaboresandroid.ui.products.ProductDetailScreen
 import com.example.pasteleriamilssaboresandroid.ui.products.ProductsScreen
@@ -76,11 +79,14 @@ fun AppNavHost(startDestination: String = Screen.Home.route) {
 
     val cartVM: CartViewModel = viewModel(factory = CartViewModelFactory(application.cartRepository))
     val userVM: UserViewModel = viewModel(factory = UserViewModelFactory(application.userRepository))
+    val checkoutVM: CheckoutViewModel = viewModel()
+
     val cartUi by cartVM.ui.collectAsStateWithLifecycle()
     val loginResult by userVM.loginResult.collectAsStateWithLifecycle()
     val registerResult by userVM.registerResult.collectAsStateWithLifecycle()
     val updateResult by userVM.updateResult.collectAsStateWithLifecycle()
     val loggedInUser by userVM.loggedInUser.collectAsStateWithLifecycle()
+    val checkoutUi by checkoutVM.uiState.collectAsStateWithLifecycle()
 
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
@@ -96,7 +102,19 @@ fun AppNavHost(startDestination: String = Screen.Home.route) {
 
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentDestination = navBackStackEntry?.destination
-    val showBottomBar = currentDestination?.route !in listOf(Screen.LoginFlow.route, Screen.Register.route)
+    val showBottomBar = currentDestination?.route !in listOf(
+        Screen.LoginFlow.route, 
+        Screen.Register.route, 
+        Screen.Checkout.route, 
+        "order_confirmation",
+        "processing_order"
+    )
+
+    LaunchedEffect(checkoutUi.order) {
+        if (checkoutUi.order != null) {
+            navController.navigate("order_confirmation")
+        }
+    }
 
     Scaffold(
         snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
@@ -229,14 +247,31 @@ fun AppNavHost(startDestination: String = Screen.Home.route) {
                     )
                 }
                 composable(Screen.Checkout.route) {
-                    CheckoutScreen(
-                        cartVM = cartVM,
-                        onFinish = {
-                            navController.navigate(Screen.Products.route) {
-                                popUpTo(navController.graph.startDestinationId) { inclusive = false }
+                    if (checkoutUi.isLoading) {
+                        ProcessingOrderScreen()
+                    } else {
+                        CheckoutScreen(
+                            cartVM = cartVM,
+                            userVM = userVM,
+                            checkoutVM = checkoutVM,
+                            onFinish = {
+                                checkoutVM.processOrder(cartUi.items, loggedInUser)
+                            },
+                            onBack = { navController.popBackStack() }
+                        )
+                    }
+                }
+                composable("order_confirmation") { 
+                    checkoutUi.order?.let {
+                        OrderConfirmationScreen(order = it) {
+                            cartVM.clear()
+                            navController.navigate(Screen.Home.route) {
+                                popUpTo(navController.graph.findStartDestination().id) {
+                                    inclusive = true
+                                }
                             }
                         }
-                    )
+                    }
                 }
                 composable(Screen.ProductDetail.route) { backStackEntry ->
                     val id = backStackEntry.arguments?.getString(Screen.ProductDetail.ID) ?: ""
@@ -258,7 +293,7 @@ fun AppNavHost(startDestination: String = Screen.Home.route) {
 
     LaunchedEffect(loggedInUser, currentDestination) {
         if (loggedInUser == null) {
-            val protectedRoutes = listOf(Screen.Profile.route, Screen.Orders.route, Screen.Checkout.route)
+            val protectedRoutes = listOf(Screen.Profile.route, Screen.Orders.route)
             if (currentDestination?.route in protectedRoutes) {
                 navController.navigate(Screen.Home.route) {
                     popUpTo(navController.graph.findStartDestination().id) {

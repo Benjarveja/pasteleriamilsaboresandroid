@@ -1,110 +1,203 @@
 package com.example.pasteleriamilssaboresandroid.ui.checkout
 
-import androidx.compose.foundation.layout.*
+import android.app.DatePickerDialog
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.example.pasteleriamilssaboresandroid.data.ChileanGeographicData
+import com.example.pasteleriamilssaboresandroid.data.paymentMethods
+import com.example.pasteleriamilssaboresandroid.data.pickupBranches
+import com.example.pasteleriamilssaboresandroid.data.pickupTimeSlots
 import com.example.pasteleriamilssaboresandroid.ui.cart.CartViewModel
-import com.example.pasteleriamilssaboresandroid.util.*
+import com.example.pasteleriamilssaboresandroid.util.formatCLP
+import com.example.pasteleriamilssaboresandroid.viewmodel.UserViewModel
+import java.util.Calendar
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun CheckoutScreen(cartVM: CartViewModel, onFinish: () -> Unit) {
-    val ui by cartVM.ui.collectAsStateWithLifecycle()
+fun CheckoutScreen(
+    cartVM: CartViewModel,
+    userVM: UserViewModel,
+    checkoutVM: CheckoutViewModel,
+    onFinish: () -> Unit,
+    onBack: () -> Unit
+) {
+    val cartUi by cartVM.ui.collectAsStateWithLifecycle()
+    val loggedInUser by userVM.loggedInUser.collectAsStateWithLifecycle()
+    val checkoutUi by checkoutVM.uiState.collectAsStateWithLifecycle()
+    val formData by checkoutVM.formData.collectAsStateWithLifecycle()
 
-    var firstName by rememberSaveable { mutableStateOf("") }
-    var lastName by rememberSaveable { mutableStateOf("") }
-    var run by rememberSaveable { mutableStateOf("") }
-    var email by rememberSaveable { mutableStateOf("") }
-    var phone by rememberSaveable { mutableStateOf("") }
-    var region by rememberSaveable { mutableStateOf("") }
-    var comuna by rememberSaveable { mutableStateOf("") }
-    var street by rememberSaveable { mutableStateOf("") }
-    var deliveryMethod by rememberSaveable { mutableStateOf("delivery") }
-    var paymentMethod by rememberSaveable { mutableStateOf("card") }
+    var deliveryExpanded by remember { mutableStateOf(false) }
+    var regionExpanded by remember { mutableStateOf(false) }
+    var comunaExpanded by remember { mutableStateOf(false) }
+    var branchExpanded by remember { mutableStateOf(false) }
+    var timeSlotExpanded by remember { mutableStateOf(false) }
 
-    var errors by remember { mutableStateOf<Map<String, String>>(emptyMap()) }
-
-    fun validate(): Boolean {
-        val newErrors = mutableMapOf<String, String>()
-        if (!hasMinLength(firstName, 2)) newErrors["firstName"] = "Nombre requerido (mín. 2 caracteres)"
-        if (!hasMinLength(lastName, 2)) newErrors["lastName"] = "Apellido requerido (mín. 2 caracteres)"
-        if (!isValidRun(run)) newErrors["run"] = "RUN inválido"
-        if (!isValidEmail(email)) newErrors["email"] = "Email inválido"
-        if (!isValidChileanPhone(phone)) newErrors["phone"] = "Teléfono inválido (debe comenzar con 9 y tener 9 dígitos)"
-        if (!hasMinLength(street, 5)) newErrors["street"] = "Dirección requerida (mín. 5 caracteres)"
-        if (!hasMinLength(region, 3)) newErrors["region"] = "Región requerida"
-        if (!hasMinLength(comuna, 3)) newErrors["comuna"] = "Comuna requerida"
-        errors = newErrors
-        return newErrors.isEmpty()
+    LaunchedEffect(loggedInUser) {
+        checkoutVM.loadForm(loggedInUser, cartUi.subtotal)
     }
 
-    Column(
-        modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp),
-        verticalArrangement = Arrangement.Top
-    ) {
-        Text("Checkout", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
-        Spacer(Modifier.size(12.dp))
-        Text("Total a pagar: ${formatCLP(ui.total)}", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold)
-        Spacer(Modifier.size(16.dp))
+    val deliveryOptions = mapOf("delivery" to "Despacho a Domicilio", "pickup" to "Retiro en Tienda")
+    val regions = ChileanGeographicData.regionsAndCommunes.keys.toList()
+    val communes by remember(formData.region) {
+        mutableStateOf(ChileanGeographicData.regionsAndCommunes[formData.region] ?: emptyList())
+    }
 
-        OutlinedTextField(value = firstName, onValueChange = { firstName = it }, label = { Text("Nombre") }, modifier = Modifier.fillMaxWidth(),
-            isError = errors.containsKey("firstName"), supportingText = { errors["firstName"]?.let { Text(it) } })
-        Spacer(Modifier.size(8.dp))
-        OutlinedTextField(value = lastName, onValueChange = { lastName = it }, label = { Text("Apellido") }, modifier = Modifier.fillMaxWidth(),
-            isError = errors.containsKey("lastName"), supportingText = { errors["lastName"]?.let { Text(it) } })
-        Spacer(Modifier.size(8.dp))
-        OutlinedTextField(value = run, onValueChange = { run = it }, label = { Text("RUN (ej: 12.345.678-5)") }, modifier = Modifier.fillMaxWidth(),
-            isError = errors.containsKey("run"), supportingText = { errors["run"]?.let { Text(it) } })
-        Spacer(Modifier.size(8.dp))
-        OutlinedTextField(value = email, onValueChange = { email = it }, label = { Text("Email") }, modifier = Modifier.fillMaxWidth(),
-            isError = errors.containsKey("email"), supportingText = { errors["email"]?.let { Text(it) } })
-        Spacer(Modifier.size(8.dp))
-        OutlinedTextField(value = phone, onValueChange = { phone = it }, label = { Text("Teléfono (ej: 987654321)") }, modifier = Modifier.fillMaxWidth(),
-            isError = errors.containsKey("phone"), supportingText = { errors["phone"]?.let { Text(it) } })
-        Spacer(Modifier.size(8.dp))
-        OutlinedTextField(value = street, onValueChange = { street = it }, label = { Text("Dirección") }, modifier = Modifier.fillMaxWidth(),
-            isError = errors.containsKey("street"), supportingText = { errors["street"]?.let { Text(it) } })
-        Spacer(Modifier.size(8.dp))
-        OutlinedTextField(value = comuna, onValueChange = { comuna = it }, label = { Text("Comuna") }, modifier = Modifier.fillMaxWidth(),
-            isError = errors.containsKey("comuna"), supportingText = { errors["comuna"]?.let { Text(it) } })
-        Spacer(Modifier.size(8.dp))
-        OutlinedTextField(value = region, onValueChange = { region = it }, label = { Text("Región") }, modifier = Modifier.fillMaxWidth(),
-            isError = errors.containsKey("region"), supportingText = { errors["region"]?.let { Text(it) } })
+    val context = LocalContext.current
+    val calendar = Calendar.getInstance()
+    val datePickerDialog = DatePickerDialog(
+        context,
+        { _, year, month, day ->
+            checkoutVM.updateFormData(formData.copy(birthDate = "$year-${month + 1}-$day"))
+        },
+        calendar.get(Calendar.YEAR),
+        calendar.get(Calendar.MONTH),
+        calendar.get(Calendar.DAY_OF_MONTH)
+    )
 
-        Spacer(Modifier.size(16.dp))
-        Text("Método de entrega", style = MaterialTheme.typography.titleMedium)
-        Spacer(Modifier.size(8.dp))
-        Row(Modifier.fillMaxWidth()) {
-            FilterChip(selected = deliveryMethod == "delivery", onClick = { deliveryMethod = "delivery" }, label = { Text("Envío a domicilio") }, modifier = Modifier.weight(1f))
-            Spacer(Modifier.size(8.dp))
-            FilterChip(selected = deliveryMethod == "pickup", onClick = { deliveryMethod = "pickup" }, label = { Text("Retiro en tienda") }, modifier = Modifier.weight(1f))
-        }
-
-        Spacer(Modifier.size(16.dp))
-        Text("Método de pago", style = MaterialTheme.typography.titleMedium)
-        Spacer(Modifier.size(8.dp))
-        Row(Modifier.fillMaxWidth()) {
-            FilterChip(selected = paymentMethod == "card", onClick = { paymentMethod = "card" }, label = { Text("Tarjeta") }, modifier = Modifier.weight(1f))
-            Spacer(Modifier.size(8.dp))
-            FilterChip(selected = paymentMethod == "transfer", onClick = { paymentMethod = "transfer" }, label = { Text("Transferencia") }, modifier = Modifier.weight(1f))
-        }
-
-        Spacer(Modifier.size(16.dp))
-        Button(
-            enabled = ui.items.isNotEmpty(),
-            onClick = {
-                if (validate()) {
-                    cartVM.clear()
-                    onFinish()
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text("Finalizar Compra") },
+                navigationIcon = {
+                    IconButton(onClick = onBack) {
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Atrás")
+                    }
                 }
-            },
-            modifier = Modifier.fillMaxWidth()
-        ) { Text("Confirmar pedido") }
+            )
+        }
+    ) { paddingValues ->
+        Column(
+            modifier = Modifier
+                .padding(paddingValues)
+                .padding(horizontal = 16.dp)
+                .verticalScroll(rememberScrollState())
+        ) {
+            // Personal Data
+            Text("Datos de Contacto", style = MaterialTheme.typography.headlineSmall, modifier = Modifier.padding(vertical = 8.dp))
+            OutlinedTextField(value = formData.run, onValueChange = { checkoutVM.updateFormData(formData.copy(run = it)) }, label = { Text("RUN") }, modifier = Modifier.fillMaxWidth(), isError = checkoutUi.validationErrors.containsKey("run"), supportingText = { checkoutUi.validationErrors["run"]?.let { Text(it) } })
+            OutlinedTextField(value = formData.firstName, onValueChange = { checkoutVM.updateFormData(formData.copy(firstName = it)) }, label = { Text("Nombre") }, modifier = Modifier.fillMaxWidth(), isError = checkoutUi.validationErrors.containsKey("firstName"), supportingText = { checkoutUi.validationErrors["firstName"]?.let { Text(it) } })
+            OutlinedTextField(value = formData.lastName, onValueChange = { checkoutVM.updateFormData(formData.copy(lastName = it)) }, label = { Text("Apellidos") }, modifier = Modifier.fillMaxWidth(), isError = checkoutUi.validationErrors.containsKey("lastName"), supportingText = { checkoutUi.validationErrors["lastName"]?.let { Text(it) } })
+            OutlinedTextField(value = formData.email, onValueChange = { checkoutVM.updateFormData(formData.copy(email = it)) }, label = { Text("Email") }, modifier = Modifier.fillMaxWidth(), isError = checkoutUi.validationErrors.containsKey("email"), supportingText = { checkoutUi.validationErrors["email"]?.let { Text(it) } })
+            OutlinedTextField(value = formData.phone, onValueChange = { checkoutVM.updateFormData(formData.copy(phone = it)) }, label = { Text("Celular") }, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone), modifier = Modifier.fillMaxWidth(), isError = checkoutUi.validationErrors.containsKey("phone"), supportingText = { checkoutUi.validationErrors["phone"]?.let { Text(it) } })
+            Button(onClick = { datePickerDialog.show() }, modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp)) {
+                Text(if (formData.birthDate.isEmpty()) "Seleccionar Fecha de Nacimiento" else formData.birthDate)
+            }
+            if (checkoutUi.validationErrors.containsKey("birthDate")) {
+                Text(checkoutUi.validationErrors["birthDate"]!!, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
+            }
+
+            // Delivery Options
+            Text("Opciones de Entrega", style = MaterialTheme.typography.headlineSmall, modifier = Modifier.padding(vertical = 8.dp))
+            ExposedDropdownMenuBox(expanded = deliveryExpanded, onExpandedChange = { deliveryExpanded = !deliveryExpanded }) {
+                OutlinedTextField(value = deliveryOptions[formData.deliveryOption] ?: "", onValueChange = {}, readOnly = true, label = { Text("Opción de Entrega") }, modifier = Modifier.menuAnchor().fillMaxWidth(), trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = deliveryExpanded) })
+                ExposedDropdownMenu(expanded = deliveryExpanded, onDismissRequest = { deliveryExpanded = false }) {
+                    deliveryOptions.forEach { (key, value) ->
+                        DropdownMenuItem(text = { Text(value) }, onClick = {
+                            checkoutVM.updateFormData(formData.copy(deliveryOption = key))
+                            deliveryExpanded = false
+                        })
+                    }
+                }
+            }
+
+            if (formData.deliveryOption == "delivery") {
+                OutlinedTextField(value = formData.street, onValueChange = { checkoutVM.updateFormData(formData.copy(street = it)) }, label = { Text("Calle y Número") }, modifier = Modifier.fillMaxWidth(), isError = checkoutUi.validationErrors.containsKey("street"), supportingText = { checkoutUi.validationErrors["street"]?.let { Text(it) } })
+                ExposedDropdownMenuBox(expanded = regionExpanded, onExpandedChange = { regionExpanded = !regionExpanded }) {
+                    OutlinedTextField(value = formData.region, onValueChange = {}, readOnly = true, label = { Text("Región") }, modifier = Modifier.menuAnchor().fillMaxWidth(), trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = regionExpanded) }, isError = checkoutUi.validationErrors.containsKey("region"))
+                    ExposedDropdownMenu(expanded = regionExpanded, onDismissRequest = { regionExpanded = false }) {
+                        regions.forEach { region ->
+                            DropdownMenuItem(text = { Text(region) }, onClick = {
+                                checkoutVM.updateFormData(formData.copy(region = region, comuna = ""))
+                                regionExpanded = false
+                            })
+                        }
+                    }
+                }
+                ExposedDropdownMenuBox(expanded = comunaExpanded, onExpandedChange = { comunaExpanded = !comunaExpanded }) {
+                    OutlinedTextField(value = formData.comuna, onValueChange = {}, readOnly = true, label = { Text("Comuna") }, modifier = Modifier.menuAnchor().fillMaxWidth(), trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = comunaExpanded) }, enabled = communes.isNotEmpty(), isError = checkoutUi.validationErrors.containsKey("comuna"))
+                    ExposedDropdownMenu(expanded = comunaExpanded, onDismissRequest = { comunaExpanded = false }) {
+                        communes.forEach { comuna ->
+                            DropdownMenuItem(text = { Text(comuna) }, onClick = {
+                                checkoutVM.updateFormData(formData.copy(comuna = comuna))
+                                comunaExpanded = false
+                            })
+                        }
+                    }
+                }
+            } else {
+                ExposedDropdownMenuBox(expanded = branchExpanded, onExpandedChange = { branchExpanded = !branchExpanded }) {
+                    OutlinedTextField(value = pickupBranches.find { it.id == formData.branch }?.name ?: "", onValueChange = {}, readOnly = true, label = { Text("Sucursal") }, modifier = Modifier.menuAnchor().fillMaxWidth(), trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = branchExpanded) }, isError = checkoutUi.validationErrors.containsKey("branch"))
+                    ExposedDropdownMenu(expanded = branchExpanded, onDismissRequest = { branchExpanded = false }) {
+                        pickupBranches.forEach { branch ->
+                            DropdownMenuItem(text = { Text(branch.name) }, onClick = {
+                                checkoutVM.updateFormData(formData.copy(branch = branch.id))
+                                branchExpanded = false
+                            })
+                        }
+                    }
+                }
+                ExposedDropdownMenuBox(expanded = timeSlotExpanded, onExpandedChange = { timeSlotExpanded = !timeSlotExpanded }) {
+                    OutlinedTextField(value = pickupTimeSlots.find { it.id == formData.pickupTimeSlot }?.label ?: "", onValueChange = {}, readOnly = true, label = { Text("Horario de Retiro") }, modifier = Modifier.menuAnchor().fillMaxWidth(), trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = timeSlotExpanded) }, isError = checkoutUi.validationErrors.containsKey("pickupTimeSlot"))
+                    ExposedDropdownMenu(expanded = timeSlotExpanded, onDismissRequest = { timeSlotExpanded = false }) {
+                        pickupTimeSlots.forEach { slot ->
+                            DropdownMenuItem(text = { Text(slot.label) }, onClick = {
+                                checkoutVM.updateFormData(formData.copy(pickupTimeSlot = slot.id))
+                                timeSlotExpanded = false
+                            })
+                        }
+                    }
+                }
+            }
+            
+            // Coupon
+            Text("Cupón de Descuento", style = MaterialTheme.typography.headlineSmall, modifier = Modifier.padding(vertical = 8.dp))
+            Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                OutlinedTextField(value = formData.couponCode, onValueChange = { checkoutVM.updateFormData(formData.copy(couponCode = it)) }, label = { Text("Código") }, modifier = Modifier.weight(1f))
+                Spacer(modifier = Modifier.width(8.dp))
+                Button(onClick = { checkoutVM.applyCoupon(cartUi.subtotal) }) {
+                    Text("Aplicar")
+                }
+            }
+
+            // Summary
+            Text("Resumen", style = MaterialTheme.typography.headlineSmall, modifier = Modifier.padding(vertical = 8.dp))
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                Text("Subtotal")
+                Text(formatCLP(checkoutUi.pricing.subtotal))
+            }
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                Text("Descuento")
+                Text(formatCLP(checkoutUi.pricing.couponDiscount))
+            }
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                Text("Total", style = MaterialTheme.typography.titleLarge)
+                Text(formatCLP(checkoutUi.pricing.total), style = MaterialTheme.typography.titleLarge)
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+            Button(onClick = onFinish, modifier = Modifier.fillMaxWidth(), enabled = checkoutUi.isFormValid && !checkoutUi.isLoading) {
+                Text(if(checkoutUi.isLoading) "Procesando..." else "Confirmar Pedido")
+            }
+            Spacer(modifier = Modifier.height(16.dp))
+        }
     }
 }
