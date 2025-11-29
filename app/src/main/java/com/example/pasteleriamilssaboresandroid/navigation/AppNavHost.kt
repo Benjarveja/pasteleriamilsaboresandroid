@@ -90,7 +90,7 @@ fun AppNavHost(startDestination: String = Screen.Home.route) {
     val application = context.applicationContext as PasteleriaApp
 
     val cartVM: CartViewModel = viewModel(factory = CartViewModelFactory(application.cartRepository))
-    val userVM: UserViewModel = viewModel(factory = UserViewModelFactory(application.userRepository))
+    val userVM: UserViewModel = viewModel(factory = UserViewModelFactory(application.authRepository))
     val checkoutVM: CheckoutViewModel = viewModel(factory = CheckoutViewModelFactory(application.orderRepository))
     val ordersVM: OrdersViewModel = viewModel(factory = OrdersViewModelFactory(application.orderRepository))
     val homeVM: HomeViewModel = viewModel(factory = HomeViewModelFactory(application.productRepository))

@@ -9,13 +9,13 @@ import com.example.pasteleriamilssaboresandroid.data.repository.CartRepository
 import com.example.pasteleriamilssaboresandroid.data.repository.NetworkProductRepository
 import com.example.pasteleriamilssaboresandroid.data.repository.ProductRepository
 import com.example.pasteleriamilssaboresandroid.data.storage.CartStorage
+import com.example.pasteleriamilssaboresandroid.data.repository.AuthRepository
+import com.example.pasteleriamilssaboresandroid.data.repository.NetworkAuthRepository
 
 class PasteleriaApp : Application() {
     val database by lazy { AppDatabase.getDatabase(this) }
     val userRepository by lazy { UserRepository(database.userDao()) }
-    import com.example.pasteleriamilssaboresandroid.data.repository.AuthRepository
-import com.example.pasteleriamilssaboresandroid.data.repository.NetworkAuthRepository
-// ... existing code ...
+
     val orderRepository by lazy { OrderRepository(database.orderDao()) }
     val cartRepository by lazy { CartRepository(CartStorage(this)) }
     val productRepository: ProductRepository by lazy {
