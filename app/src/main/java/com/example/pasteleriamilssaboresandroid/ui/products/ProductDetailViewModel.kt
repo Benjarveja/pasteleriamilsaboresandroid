@@ -3,7 +3,7 @@ package com.example.pasteleriamilssaboresandroid.ui.products
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
-import com.example.pasteleriamilssaboresandroid.data.repository.AssetsProductRepository
+import com.example.pasteleriamilssaboresandroid.data.repository.ProductRepository
 import com.example.pasteleriamilssaboresandroid.domain.model.Product
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -18,7 +18,7 @@ data class ProductDetailUiState(
 )
 
 class ProductDetailViewModel(
-    private val repo: AssetsProductRepository,
+    private val repo: ProductRepository,
     private val productId: String,
 ) : ViewModel() {
     private val _ui = MutableStateFlow(ProductDetailUiState(isLoading = true))
@@ -31,7 +31,7 @@ class ProductDetailViewModel(
             _ui.update { it.copy(isLoading = true, error = null) }
             runCatching {
                 val all = repo.getProducts()
-                all.firstOrNull { it.id == productId } ?: error("Producto no encontrado")
+                all.firstOrNull { it.productId == productId } ?: error("Producto no encontrado")
             }.onSuccess { p ->
                 _ui.update { it.copy(isLoading = false, product = p) }
             }.onFailure { e ->
@@ -42,7 +42,7 @@ class ProductDetailViewModel(
 }
 
 class ProductDetailViewModelFactory(
-    private val repo: AssetsProductRepository,
+    private val repo: ProductRepository,
     private val productId: String,
 ) : ViewModelProvider.Factory {
     @Suppress("UNCHECKED_CAST")

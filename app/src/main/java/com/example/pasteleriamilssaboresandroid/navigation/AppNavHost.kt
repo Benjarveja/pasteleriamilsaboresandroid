@@ -61,6 +61,8 @@ import com.example.pasteleriamilssaboresandroid.ui.checkout.OrderConfirmationScr
 import com.example.pasteleriamilssaboresandroid.ui.checkout.ProcessingOrderScreen
 import com.example.pasteleriamilssaboresandroid.ui.news.NewsScreen
 import com.example.pasteleriamilssaboresandroid.ui.products.ProductDetailScreen
+import com.example.pasteleriamilssaboresandroid.ui.products.ProductDetailViewModel
+import com.example.pasteleriamilssaboresandroid.ui.products.ProductDetailViewModelFactory
 import com.example.pasteleriamilssaboresandroid.ui.products.ProductsScreen
 import com.example.pasteleriamilssaboresandroid.ui.products.ProductsViewModel
 import com.example.pasteleriamilssaboresandroid.ui.products.ProductsViewModelFactory
@@ -292,9 +294,11 @@ fun AppNavHost(startDestination: String = Screen.Home.route) {
                 }
                 composable(Screen.ProductDetail.route) { backStackEntry ->
                     val id = backStackEntry.arguments?.getString(Screen.ProductDetail.ID) ?: ""
+                    val productDetailVM: ProductDetailViewModel = viewModel(
+                        factory = ProductDetailViewModelFactory(application.productRepository, id)
+                    )
                     ProductDetailScreen(
-                        productsVM = productsVM,
-                        productId = id,
+                        productDetailVM = productDetailVM,
                         cartVM = cartVM,
                         onBack = { navController.popBackStack() }
                     )

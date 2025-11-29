@@ -28,21 +28,16 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.rememberAsyncImagePainter
 import coil.request.ImageRequest
-import com.example.pasteleriamilssaboresandroid.data.repository.AssetsProductRepository
 import com.example.pasteleriamilssaboresandroid.ui.cart.CartViewModel
 import com.example.pasteleriamilssaboresandroid.util.formatCLP
 
 @Composable
 fun ProductDetailScreen(
-    productId: String,
+    productDetailVM: ProductDetailViewModel,
     cartVM: CartViewModel,
     onBack: () -> Unit,
 ) {
-    val context = LocalContext.current
-    val vm: ProductDetailViewModel = viewModel(
-        factory = ProductDetailViewModelFactory(AssetsProductRepository(context.assets), productId)
-    )
-    val ui by vm.ui.collectAsStateWithLifecycle()
+    val ui by productDetailVM.ui.collectAsStateWithLifecycle()
 
     when {
         ui.isLoading -> Column(Modifier.fillMaxSize(), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
@@ -51,32 +46,32 @@ fun ProductDetailScreen(
         ui.error != null -> Column(Modifier.fillMaxSize(), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
             Text("Ocurrió un error: ${ui.error}")
             Spacer(Modifier.size(8.dp))
-            OutlinedButton(onClick = { vm.load() }) { Text("Reintentar") }
+            OutlinedButton(onClick = { productDetailVM.load() }) { Text("Reintentar") }
             Spacer(Modifier.size(8.dp))
             OutlinedButton(onClick = onBack) { Text("Volver") }
         }
         else -> {
             val p = ui.product ?: return
-            val assetPath = p.image?.let { "file:///android_asset/$it" }
+            val context = LocalContext.current
             val painter = rememberAsyncImagePainter(
-                model = ImageRequest.Builder(context).data(assetPath).crossfade(true).build()
+                model = ImageRequest.Builder(context).data(p.productImage).crossfade(true).build()
             )
             Column(Modifier.fillMaxSize().padding(16.dp)) {
                 OutlinedButton(onClick = onBack) { Text("Volver") }
                 Spacer(Modifier.size(12.dp))
-                if (assetPath != null) {
+                if (p.productImage != null) {
                     Image(
                         painter = painter,
-                        contentDescription = p.name,
+                        contentDescription = p.productName,
                         modifier = Modifier.fillMaxWidth().height(220.dp).clip(MaterialTheme.shapes.medium),
                         contentScale = ContentScale.Crop
                     )
                 }
                 Spacer(Modifier.size(12.dp))
-                Text(p.name, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
+                Text(p.productName, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
                 Text(p.category, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.secondary)
                 Spacer(Modifier.size(8.dp))
-                p.description?.let { Text(it, style = MaterialTheme.typography.bodyMedium) }
+                p.productDescription?.let { Text(it, style = MaterialTheme.typography.bodyMedium) }
                 Spacer(Modifier.size(16.dp))
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                     Text(formatCLP(p.price), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold)
