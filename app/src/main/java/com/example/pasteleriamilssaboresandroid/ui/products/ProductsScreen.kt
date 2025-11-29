@@ -46,12 +46,13 @@ import com.example.pasteleriamilssaboresandroid.util.formatCLP
 import kotlin.math.roundToInt
 
 @Composable
-fun ProductsScreen(cartVM: CartViewModel, onOpen: (String) -> Unit, onShowSnackbar: (String) -> Unit) {
-    val context = LocalContext.current
-    val vm: ProductsViewModel = viewModel(
-        factory = ProductsViewModelFactory(AssetsProductRepository(context.assets))
-    )
-    val ui by vm.uiState.collectAsStateWithLifecycle()
+fun ProductsScreen(
+    productsVM: ProductsViewModel,
+    cartVM: CartViewModel,
+    onOpen: (String) -> Unit,
+    onShowSnackbar: (String) -> Unit
+) {
+    val ui by productsVM.uiState.collectAsStateWithLifecycle()
 
     Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
         Text(
@@ -61,14 +62,14 @@ fun ProductsScreen(cartVM: CartViewModel, onOpen: (String) -> Unit, onShowSnackb
         )
         OutlinedTextField(
             value = ui.query,
-            onValueChange = vm::onQueryChange,
+            onValueChange = productsVM::onQueryChange,
             modifier = Modifier.fillMaxWidth().padding(top = 12.dp),
             label = { Text("Buscar productos") }
         )
 
         // Botón para mostrar/ocultar filtros
         Button(
-            onClick = { vm.toggleFilters() },
+            onClick = { productsVM.toggleFilters() },
             modifier = Modifier.padding(top = 8.dp)
         ) {
             Text(if (ui.filtersVisible) "Ocultar filtros" else "Mostrar filtros")
@@ -88,13 +89,13 @@ fun ProductsScreen(cartVM: CartViewModel, onOpen: (String) -> Unit, onShowSnackb
             ) {
                 FilterChip(
                     selected = ui.category == null,
-                    onClick = { vm.onCategoryChange(null) },
+                    onClick = { productsVM.onCategoryChange(null) },
                     label = { Text("Todas") }
                 )
                 ui.categories.forEach { cat ->
                     FilterChip(
                         selected = ui.category == cat,
-                        onClick = { vm.onCategoryChange(if (ui.category == cat) null else cat) },
+                        onClick = { productsVM.onCategoryChange(if (ui.category == cat) null else cat) },
                         label = { Text(cat) }
                     )
                 }
@@ -111,13 +112,13 @@ fun ProductsScreen(cartVM: CartViewModel, onOpen: (String) -> Unit, onShowSnackb
                     RangeSlider(
                         value = ui.selectedMinPrice.toFloat()..ui.selectedMaxPrice.toFloat(),
                         onValueChange = { range ->
-                            vm.onPriceRangeChange(range.start.roundToInt(), range.endInclusive.roundToInt())
+                            productsVM.onPriceRangeChange(range.start.roundToInt(), range.endInclusive.roundToInt())
                         },
                         valueRange = min.toFloat()..max.toFloat(),
                         colors = SliderDefaults.colors()
                     )
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
-                        OutlinedButton(onClick = { vm.resetFilters() }) { Text("Restablecer filtros") }
+                        OutlinedButton(onClick = { productsVM.resetFilters() }) { Text("Restablecer filtros") }
                     }
                 }
             }
@@ -133,12 +134,12 @@ fun ProductsScreen(cartVM: CartViewModel, onOpen: (String) -> Unit, onShowSnackb
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Text("Ocurrió un error: ${ui.error}")
-                Button(onClick = { vm.load() }, modifier = Modifier.padding(top = 8.dp)) {
+                Button(onClick = { productsVM.load() }, modifier = Modifier.padding(top = 8.dp)) {
                     Text("Reintentar")
                 }
             }
             else -> ProductList(
-                products = vm.filtered(ui),
+                products = productsVM.filtered(ui),
                 onAdd = {
                     cartVM.add(it)
                     onShowSnackbar("${it.name} agregado al carrito")

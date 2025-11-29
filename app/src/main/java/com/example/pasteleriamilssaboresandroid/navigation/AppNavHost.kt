@@ -62,6 +62,8 @@ import com.example.pasteleriamilssaboresandroid.ui.checkout.ProcessingOrderScree
 import com.example.pasteleriamilssaboresandroid.ui.news.NewsScreen
 import com.example.pasteleriamilssaboresandroid.ui.products.ProductDetailScreen
 import com.example.pasteleriamilssaboresandroid.ui.products.ProductsScreen
+import com.example.pasteleriamilssaboresandroid.ui.products.ProductsViewModel
+import com.example.pasteleriamilssaboresandroid.ui.products.ProductsViewModelFactory
 import com.example.pasteleriamilssaboresandroid.ui.theme.screen.home.HomeScreen
 import com.example.pasteleriamilssaboresandroid.ui.theme.screen.home.HomeViewModel
 import com.example.pasteleriamilssaboresandroid.ui.theme.screen.home.HomeViewModelFactory
@@ -89,7 +91,8 @@ fun AppNavHost(startDestination: String = Screen.Home.route) {
     val userVM: UserViewModel = viewModel(factory = UserViewModelFactory(application.userRepository))
     val checkoutVM: CheckoutViewModel = viewModel(factory = CheckoutViewModelFactory(application.orderRepository))
     val ordersVM: OrdersViewModel = viewModel(factory = OrdersViewModelFactory(application.orderRepository))
-    val homeVM: HomeViewModel = viewModel(factory = HomeViewModelFactory(AssetsProductRepository(context.assets)))
+    val homeVM: HomeViewModel = viewModel(factory = HomeViewModelFactory(application.productRepository))
+    val productsVM: ProductsViewModel = viewModel(factory = ProductsViewModelFactory(application.productRepository))
 
     val cartUi by cartVM.ui.collectAsStateWithLifecycle()
     val loginResult by userVM.loginResult.collectAsStateWithLifecycle()
@@ -245,6 +248,7 @@ fun AppNavHost(startDestination: String = Screen.Home.route) {
                 }
                 composable(Screen.Products.route) {
                     ProductsScreen(
+                        productsVM = productsVM,
                         cartVM = cartVM,
                         onOpen = { id -> navController.navigate("product/$id") },
                         onShowSnackbar = { message ->
@@ -289,6 +293,7 @@ fun AppNavHost(startDestination: String = Screen.Home.route) {
                 composable(Screen.ProductDetail.route) { backStackEntry ->
                     val id = backStackEntry.arguments?.getString(Screen.ProductDetail.ID) ?: ""
                     ProductDetailScreen(
+                        productsVM = productsVM,
                         productId = id,
                         cartVM = cartVM,
                         onBack = { navController.popBackStack() }

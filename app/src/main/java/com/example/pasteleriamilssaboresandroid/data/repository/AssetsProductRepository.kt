@@ -15,7 +15,11 @@ class AssetsProductRepository(private val assets: AssetManager) : ProductReposit
         buildList(arr.length()) {
             for (i in 0 until arr.length()) {
                 val o = arr.getJSONObject(i)
-                val image = o.optString("image", "").takeIf { it.isNotBlank() }
+                val rawImage = o.optString("image", "").takeIf { it.isNotBlank() }
+                val image = rawImage
+                    ?.removePrefix("images/")
+                    ?.removePrefix("/")
+                    ?.takeIf { it.isNotBlank() }
                 val description = o.optString("description", "").takeIf { it.isNotBlank() }
                 val history = o.optString("history", "").takeIf { it.isNotBlank() }
                 add(
