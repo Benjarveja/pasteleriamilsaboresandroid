@@ -23,6 +23,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.pasteleriamilssaboresandroid.data.ChileanGeographicData
+import com.example.pasteleriamilssaboresandroid.data.PaymentMethod
 import com.example.pasteleriamilssaboresandroid.data.paymentMethods
 import com.example.pasteleriamilssaboresandroid.data.pickupBranches
 import com.example.pasteleriamilssaboresandroid.data.pickupTimeSlots
@@ -30,6 +31,7 @@ import com.example.pasteleriamilssaboresandroid.ui.cart.CartViewModel
 import com.example.pasteleriamilssaboresandroid.util.formatCLP
 import com.example.pasteleriamilssaboresandroid.viewmodel.UserViewModel
 import java.util.Calendar
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -44,15 +46,30 @@ fun CheckoutScreen(
     val loggedInUser by userVM.loggedInUser.collectAsStateWithLifecycle()
     val checkoutUi by checkoutVM.uiState.collectAsStateWithLifecycle()
     val formData by checkoutVM.formData.collectAsStateWithLifecycle()
+    val snackbarHostState = remember { SnackbarHostState() }
+    val coroutineScope = rememberCoroutineScope()
 
     var deliveryExpanded by remember { mutableStateOf(false) }
     var regionExpanded by remember { mutableStateOf(false) }
     var comunaExpanded by remember { mutableStateOf(false) }
     var branchExpanded by remember { mutableStateOf(false) }
     var timeSlotExpanded by remember { mutableStateOf(false) }
+    var paymentExpanded by remember { mutableStateOf(false) }
+
+    val selectedPayment = paymentMethods.find { it.id == formData.paymentMethod } ?: paymentMethods.first()
 
     LaunchedEffect(loggedInUser, cartUi.subtotal) {
         checkoutVM.loadForm(cartUi.subtotal)
+    }
+    LaunchedEffect(checkoutUi.error) {
+        checkoutUi.error?.let { message ->
+            coroutineScope.launch { snackbarHostState.showSnackbar(message) }
+        }
+    }
+    LaunchedEffect(checkoutUi.order) {
+        if (checkoutUi.order != null && checkoutUi.error == null && !checkoutUi.isLoading) {
+            onFinish()
+        }
     }
 
     val deliveryOptions = mapOf("delivery" to "Despacho a Domicilio", "pickup" to "Retiro en Tienda")
@@ -74,6 +91,7 @@ fun CheckoutScreen(
     )
 
     Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             TopAppBar(
                 title = { Text("Finalizar Compra") },
@@ -178,6 +196,27 @@ fun CheckoutScreen(
                 }
             }
 
+            Text("Método de pago", style = MaterialTheme.typography.headlineSmall, modifier = Modifier.padding(vertical = 8.dp))
+            ExposedDropdownMenuBox(expanded = paymentExpanded, onExpandedChange = { paymentExpanded = !paymentExpanded }) {
+                OutlinedTextField(
+                    value = selectedPayment.label,
+                    onValueChange = {},
+                    readOnly = true,
+                    label = { Text("Selecciona un método") },
+                    modifier = Modifier.menuAnchor().fillMaxWidth(),
+                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = paymentExpanded) },
+                    isError = checkoutUi.validationErrors.containsKey("paymentMethod")
+                )
+                ExposedDropdownMenu(expanded = paymentExpanded, onDismissRequest = { paymentExpanded = false }) {
+                    paymentMethods.forEach { method ->
+                        DropdownMenuItem(text = { Text(method.label) }, onClick = {
+                            checkoutVM.updateFormData(formData.copy(paymentMethod = method.id))
+                            paymentExpanded = false
+                        })
+                    }
+                }
+            }
+
             // Summary
             Text("Resumen", style = MaterialTheme.typography.headlineSmall, modifier = Modifier.padding(vertical = 8.dp))
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
@@ -194,8 +233,12 @@ fun CheckoutScreen(
             }
 
             Spacer(modifier = Modifier.height(16.dp))
-            Button(onClick = onFinish, modifier = Modifier.fillMaxWidth(), enabled = checkoutUi.isFormValid && !checkoutUi.isLoading) {
-                Text(if(checkoutUi.isLoading) "Procesando..." else "Confirmar Pedido")
+            Button(
+                onClick = { checkoutVM.processOrder(cartUi.items) },
+                modifier = Modifier.fillMaxWidth(),
+                enabled = checkoutUi.isFormValid && !checkoutUi.isLoading
+            ) {
+                Text(if (checkoutUi.isLoading) "Procesando..." else "Confirmar Pedido")
             }
             Spacer(modifier = Modifier.height(16.dp))
         }
