@@ -51,8 +51,8 @@ fun CheckoutScreen(
     var branchExpanded by remember { mutableStateOf(false) }
     var timeSlotExpanded by remember { mutableStateOf(false) }
 
-    LaunchedEffect(loggedInUser) {
-        checkoutVM.loadForm(loggedInUser, cartUi.subtotal)
+    LaunchedEffect(loggedInUser, cartUi.subtotal) {
+        checkoutVM.loadForm(cartUi.subtotal)
     }
 
     val deliveryOptions = mapOf("delivery" to "Despacho a Domicilio", "pickup" to "Retiro en Tienda")

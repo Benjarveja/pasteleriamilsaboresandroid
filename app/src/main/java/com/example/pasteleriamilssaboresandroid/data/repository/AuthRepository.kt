@@ -16,7 +16,7 @@ interface AuthRepository {
         comuna: String?,
         street: String?
     ): User
+    suspend fun updateUser(user: User): User
+    suspend fun getCurrentUser(): User?
+    suspend fun logout()
 }
-
-
-

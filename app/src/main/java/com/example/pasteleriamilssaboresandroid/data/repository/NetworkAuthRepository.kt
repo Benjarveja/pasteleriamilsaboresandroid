@@ -6,14 +6,15 @@ import com.example.pasteleriamilssaboresandroid.data.network.dto.RegisterRequest
 import com.example.pasteleriamilssaboresandroid.domain.model.User
 
 class NetworkAuthRepository(private val apiService: ApiService) : AuthRepository {
+    private var cachedUser: User? = null
+
     override suspend fun login(email: String, password: String): User {
         val response = apiService.login(AuthRequest(email, password))
-        // Aquí puedes guardar el token y refreshToken si es necesario
         return User(
             id = response.userId,
             email = response.email,
-            name = "" // El backend no devuelve el nombre en AuthResponse
-        )
+            name = ""
+        ).also { cachedUser = it }
     }
 
     override suspend fun register(
@@ -42,12 +43,20 @@ class NetworkAuthRepository(private val apiService: ApiService) : AuthRepository
                 birthDate = birthDate
             )
         )
-        // Aquí puedes guardar el token y refreshToken si es necesario
         return User(
             id = response.userId,
             email = response.email,
             name = "$firstName $lastName"
-        )
+        ).also { cachedUser = it }
+    }
+
+    override suspend fun updateUser(user: User): User {
+        return apiService.updateUser(user.id, user).also { cachedUser = it }
+    }
+
+    override suspend fun getCurrentUser(): User? = cachedUser
+
+    override suspend fun logout() {
+        cachedUser = null
     }
 }
-

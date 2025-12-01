@@ -2,8 +2,8 @@ package com.example.pasteleriamilssaboresandroid.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.pasteleriamilssaboresandroid.data.database.order.Order
-import com.example.pasteleriamilssaboresandroid.data.database.order.OrderRepository
+import com.example.pasteleriamilssaboresandroid.domain.model.Order
+import com.example.pasteleriamilssaboresandroid.data.repository.NetworkOrderRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -15,16 +15,18 @@ data class OrdersUiState(
     val error: String? = null
 )
 
-class OrdersViewModel(private val orderRepository: OrderRepository) : ViewModel() {
+class OrdersViewModel(private val orderRepository: NetworkOrderRepository) : ViewModel() {
     private val _uiState = MutableStateFlow(OrdersUiState())
     val uiState: StateFlow<OrdersUiState> = _uiState.asStateFlow()
 
-    fun loadOrders(userId: Int) {
+    fun loadOrders() {
         viewModelScope.launch {
-            _uiState.value = _uiState.value.copy(isLoading = true)
-            orderRepository.getOrdersByUser(userId).collect {
-                _uiState.value = _uiState.value.copy(orders = it, isLoading = false)
-            }
+            _uiState.value = _uiState.value.copy(isLoading = true, error = null)
+            val result = orderRepository.getMyOrders()
+            _uiState.value = result.fold(
+                onSuccess = { OrdersUiState(orders = it, isLoading = false) },
+                onFailure = { OrdersUiState(isLoading = false, error = it.message) }
+            )
         }
     }
 }

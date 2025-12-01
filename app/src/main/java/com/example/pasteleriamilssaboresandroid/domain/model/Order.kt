@@ -3,6 +3,7 @@ package com.example.pasteleriamilssaboresandroid.domain.model
 data class Order(
     val code: String,
     val createdAt: String,
+    val status: String?,
     val userId: String? = null,
     val items: List<CartItem>,
     val subtotal: Int,

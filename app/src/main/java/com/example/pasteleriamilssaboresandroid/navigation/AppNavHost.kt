@@ -49,7 +49,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import coil.compose.rememberAsyncImagePainter
-import com.example.pasteleriamilssaboresandroid.PasteleriaApp
+import com.example.pasteleriamilssaboresandroid.PasteleriaMilSaboresApplication
 import com.example.pasteleriamilssaboresandroid.data.repository.AssetsProductRepository
 import com.example.pasteleriamilssaboresandroid.ui.cart.CartScreen
 import com.example.pasteleriamilssaboresandroid.ui.cart.CartViewModel
@@ -77,24 +77,32 @@ import com.example.pasteleriamilssaboresandroid.viewmodel.LoginResult
 import com.example.pasteleriamilssaboresandroid.viewmodel.OrdersViewModel
 import com.example.pasteleriamilssaboresandroid.viewmodel.OrdersViewModelFactory
 import com.example.pasteleriamilssaboresandroid.viewmodel.RegisterResult
-import com.example.pasteleriamilssaboresandroid.viewmodel.UpdateResult
 import com.example.pasteleriamilssaboresandroid.viewmodel.UserViewModel
 import com.example.pasteleriamilssaboresandroid.viewmodel.UserViewModelFactory
 import kotlinx.coroutines.launch
+
+sealed class UpdateResult {
+    object Idle : UpdateResult()
+    object Success : UpdateResult()
+    data class Error(val message: String) : UpdateResult()
+}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AppNavHost(startDestination: String = Screen.Home.route) {
     val navController = rememberNavController()
     val context = LocalContext.current
-    val application = context.applicationContext as PasteleriaApp
+    val application = context.applicationContext as PasteleriaMilSaboresApplication
+    val container = application.container
 
-    val cartVM: CartViewModel = viewModel(factory = CartViewModelFactory(application.cartRepository))
-    val userVM: UserViewModel = viewModel(factory = UserViewModelFactory(application.authRepository))
-    val checkoutVM: CheckoutViewModel = viewModel(factory = CheckoutViewModelFactory(application.orderRepository))
-    val ordersVM: OrdersViewModel = viewModel(factory = OrdersViewModelFactory(application.orderRepository))
-    val homeVM: HomeViewModel = viewModel(factory = HomeViewModelFactory(application.productRepository))
-    val productsVM: ProductsViewModel = viewModel(factory = ProductsViewModelFactory(application.productRepository))
+    val cartVM: CartViewModel = viewModel(factory = CartViewModelFactory(container.cartRepository))
+    val userVM: UserViewModel = viewModel(factory = UserViewModelFactory(container.authRepository))
+    val checkoutVM: CheckoutViewModel = viewModel(
+        factory = CheckoutViewModelFactory(container.checkoutRepository, container.authRepository)
+    )
+    val ordersVM: OrdersViewModel = viewModel(factory = OrdersViewModelFactory(container.ordersRepository))
+    val homeVM: HomeViewModel = viewModel(factory = HomeViewModelFactory(container.productRepository))
+    val productsVM: ProductsViewModel = viewModel(factory = ProductsViewModelFactory(container.productRepository))
 
     val cartUi by cartVM.ui.collectAsStateWithLifecycle()
     val loginResult by userVM.loginResult.collectAsStateWithLifecycle()
@@ -148,16 +156,7 @@ fun AppNavHost(startDestination: String = Screen.Home.route) {
                         } else {
                             Box {
                                 IconButton(onClick = { showMenu = !showMenu }) {
-                                    loggedInUser?.profilePictureUri?.let { uriString ->
-                                        Image(
-                                            painter = rememberAsyncImagePainter(model = Uri.parse(uriString)),
-                                            contentDescription = "User Profile Picture",
-                                            modifier = Modifier
-                                                .size(32.dp)
-                                                .clip(CircleShape),
-                                            contentScale = ContentScale.Crop
-                                        )
-                                    } ?: Icon(Icons.Filled.Person, contentDescription = "User Menu")
+                                    Icon(Icons.Filled.Person, contentDescription = "User Menu")
                                 }
                                 DropdownMenu(
                                     expanded = showMenu,
@@ -266,28 +265,23 @@ fun AppNavHost(startDestination: String = Screen.Home.route) {
                     )
                 }
                 composable(Screen.Checkout.route) {
-                    if (checkoutUi.isLoading) {
-                        ProcessingOrderScreen()
-                    } else {
-                        CheckoutScreen(
-                            cartVM = cartVM,
-                            userVM = userVM,
-                            checkoutVM = checkoutVM,
-                            onFinish = {
-                                checkoutVM.processOrder(cartUi.items, loggedInUser)
-                            },
-                            onBack = { navController.popBackStack() }
-                        )
-                    }
+                    CheckoutScreen(
+                        cartVM = cartVM,
+                        userVM = userVM,
+                        checkoutVM = checkoutVM,
+                        onFinish = { checkoutVM.processOrder(cartUi.items) },
+                        onBack = { navController.popBackStack() }
+                    )
                 }
-                composable("order_confirmation") { 
+                composable("order_confirmation") {
                     checkoutUi.order?.let {
                         OrderConfirmationScreen(order = it) {
                             cartVM.clear()
-                            navController.navigate(Screen.Home.route) {
+                            navController.navigate(Screen.Orders.route) {
                                 popUpTo(navController.graph.findStartDestination().id) {
-                                    inclusive = true
+                                    inclusive = false
                                 }
+                                launchSingleTop = true
                             }
                         }
                     }
@@ -295,7 +289,7 @@ fun AppNavHost(startDestination: String = Screen.Home.route) {
                 composable(Screen.ProductDetail.route) { backStackEntry ->
                     val id = backStackEntry.arguments?.getString(Screen.ProductDetail.ID) ?: ""
                     val productDetailVM: ProductDetailViewModel = viewModel(
-                        factory = ProductDetailViewModelFactory(application.productRepository, id)
+                        factory = ProductDetailViewModelFactory(container.productRepository, id)
                     )
                     ProductDetailScreen(
                         productDetailVM = productDetailVM,

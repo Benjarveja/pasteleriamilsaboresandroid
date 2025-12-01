@@ -21,6 +21,12 @@ sealed class RegisterResult {
     data class Error(val message: String) : RegisterResult()
 }
 
+sealed class UpdateResult {
+    object Idle : UpdateResult()
+    object Success : UpdateResult()
+    data class Error(val message: String) : UpdateResult()
+}
+
 class UserViewModel(private val authRepository: AuthRepository) : ViewModel() {
 
     private val _loginResult = MutableStateFlow<LoginResult>(LoginResult.Idle)
@@ -28,6 +34,9 @@ class UserViewModel(private val authRepository: AuthRepository) : ViewModel() {
 
     private val _registerResult = MutableStateFlow<RegisterResult>(RegisterResult.Idle)
     val registerResult: StateFlow<RegisterResult> = _registerResult.asStateFlow()
+
+    private val _updateResult = MutableStateFlow<UpdateResult>(UpdateResult.Idle)
+    val updateResult: StateFlow<UpdateResult> = _updateResult.asStateFlow()
 
     private val _loggedInUser = MutableStateFlow<User?>(null)
     val loggedInUser: StateFlow<User?> = _loggedInUser.asStateFlow()
@@ -45,7 +54,16 @@ class UserViewModel(private val authRepository: AuthRepository) : ViewModel() {
     }
 
     fun logout() {
-        _loggedInUser.value = null
+        viewModelScope.launch {
+            authRepository.logout()
+            _loggedInUser.value = null
+        }
+    }
+
+    fun refreshSession() {
+        viewModelScope.launch {
+            _loggedInUser.value = authRepository.getCurrentUser()
+        }
     }
 
     fun resetLoginState() {
@@ -54,6 +72,10 @@ class UserViewModel(private val authRepository: AuthRepository) : ViewModel() {
 
     fun resetRegisterState() {
         _registerResult.value = RegisterResult.Idle
+    }
+
+    fun resetUpdateState() {
+        _updateResult.value = UpdateResult.Idle
     }
 
     fun registerUser(
@@ -86,6 +108,18 @@ class UserViewModel(private val authRepository: AuthRepository) : ViewModel() {
                 _registerResult.value = RegisterResult.Success
             } catch (e: Exception) {
                 _registerResult.value = RegisterResult.Error(e.message ?: "Unknown error")
+            }
+        }
+    }
+
+    fun updateUser(user: User) {
+        viewModelScope.launch {
+            try {
+                val updatedUser = authRepository.updateUser(user)
+                _loggedInUser.value = updatedUser
+                _updateResult.value = UpdateResult.Success
+            } catch (e: Exception) {
+                _updateResult.value = UpdateResult.Error(e.message ?: "Unknown error")
             }
         }
     }

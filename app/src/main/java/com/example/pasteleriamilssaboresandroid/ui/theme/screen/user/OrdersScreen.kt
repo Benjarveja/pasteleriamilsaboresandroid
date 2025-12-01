@@ -19,6 +19,8 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Divider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -31,12 +33,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.example.pasteleriamilssaboresandroid.data.database.order.Order
+import com.example.pasteleriamilssaboresandroid.domain.model.Order
 import com.example.pasteleriamilssaboresandroid.util.formatCLP
 import com.example.pasteleriamilssaboresandroid.util.getOrderStatus
 import com.example.pasteleriamilssaboresandroid.viewmodel.OrdersViewModel
 import com.example.pasteleriamilssaboresandroid.viewmodel.UserViewModel
-import java.text.SimpleDateFormat
+import java.time.Instant
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
 import java.util.Locale
 
 @Composable
@@ -45,12 +49,16 @@ fun OrdersScreen(ordersViewModel: OrdersViewModel, userViewModel: UserViewModel)
     val loggedInUser by userViewModel.loggedInUser.collectAsStateWithLifecycle()
 
     LaunchedEffect(loggedInUser) {
-        loggedInUser?.id?.let {
-            ordersViewModel.loadOrders(it)
-        }
+        loggedInUser?.let { ordersViewModel.loadOrders() }
     }
 
-    Scaffold {
+    val snackbarHostState = remember { SnackbarHostState() }
+
+    LaunchedEffect(uiState.error) {
+        uiState.error?.let { snackbarHostState.showSnackbar(it) }
+    }
+
+    Scaffold(snackbarHost = { SnackbarHost(snackbarHostState) }) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -90,7 +98,10 @@ fun OrderCard(order: Order) {
     var expanded by remember { mutableStateOf(false) }
     val status = getOrderStatus(order)
     val formattedDate = remember(order.createdAt) {
-        SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault()).format(order.createdAt)
+        runCatching {
+            Instant.parse(order.createdAt).atZone(ZoneId.systemDefault())
+                .format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm"))
+        }.getOrDefault(order.createdAt)
     }
 
     Card(

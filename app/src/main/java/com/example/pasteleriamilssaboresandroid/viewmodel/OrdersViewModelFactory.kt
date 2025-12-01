@@ -2,9 +2,9 @@ package com.example.pasteleriamilssaboresandroid.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
-import com.example.pasteleriamilssaboresandroid.data.database.order.OrderRepository
+import com.example.pasteleriamilssaboresandroid.data.repository.NetworkOrderRepository
 
-class OrdersViewModelFactory(private val orderRepository: OrderRepository) : ViewModelProvider.Factory {
+class OrdersViewModelFactory(private val orderRepository: NetworkOrderRepository) : ViewModelProvider.Factory {
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
         if (modelClass.isAssignableFrom(OrdersViewModel::class.java)) {
             @Suppress("UNCHECKED_CAST")
