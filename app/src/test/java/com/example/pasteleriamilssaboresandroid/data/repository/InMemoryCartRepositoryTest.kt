@@ -11,6 +11,11 @@ class InMemoryCartRepositoryTest {
     private val repository = InMemoryCartRepository()
 
     @Test
+    fun `cartItems emits empty list by default`() = runTest {
+        assertEquals(emptyList<CartItem>(), repository.cartItems.first())
+    }
+
+    @Test
     fun `saveCart updates state flow`() = runTest {
         val items = listOf(CartItem("P1", "Cake", price = 1000, quantity = 2))
 
@@ -30,4 +35,3 @@ class InMemoryCartRepositoryTest {
         assertEquals(second, repository.cartItems.first())
     }
 }
-

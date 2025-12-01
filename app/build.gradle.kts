@@ -1,3 +1,5 @@
+import org.gradle.testing.jacoco.tasks.JacocoReport
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
@@ -5,6 +7,7 @@ plugins {
     alias(libs.plugins.kotlin.serialization)
     id("com.google.devtools.ksp") version "1.9.24-1.0.20"
     id("kotlin-kapt")
+    id("jacoco")
 }
 
 android {
@@ -40,6 +43,10 @@ android {
     buildFeatures {
         compose = true
     }
+}
+
+jacoco {
+    toolVersion = "0.8.11"
 }
 
 dependencies {
@@ -85,4 +92,33 @@ dependencies {
     androidTestImplementation(libs.androidx.compose.ui.test.junit4)
     debugImplementation(libs.androidx.compose.ui.tooling)
     debugImplementation(libs.androidx.compose.ui.test.manifest)
+}
+
+tasks.withType<Test>().configureEach {
+    finalizedBy("jacocoTestReport")
+}
+
+tasks.register<JacocoReport>("jacocoTestReport") {
+    dependsOn("testDebugUnitTest", "testReleaseUnitTest")
+    reports {
+        xml.required.set(true)
+        html.required.set(true)
+    }
+    val fileFilter = listOf(
+        "**/R.class",
+        "**/R$*.class",
+        "**/BuildConfig.*",
+        "**/Manifest*.*",
+        "**/*Test*.*",
+        "android/**/*.*"
+    )
+    classDirectories.setFrom(
+        fileTree("${'$'}buildDir/tmp/kotlin-classes/debug") { exclude(fileFilter) },
+        fileTree("${'$'}buildDir/tmp/kotlin-classes/release") { exclude(fileFilter) }
+    )
+    sourceDirectories.setFrom(files("src/main/java"))
+    executionData.setFrom(
+        file("${'$'}buildDir/jacoco/testDebugUnitTest.exec"),
+        file("${'$'}buildDir/jacoco/testReleaseUnitTest.exec")
+    )
 }
