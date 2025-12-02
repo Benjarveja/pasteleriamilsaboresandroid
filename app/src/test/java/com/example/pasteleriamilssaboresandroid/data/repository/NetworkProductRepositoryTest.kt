@@ -8,14 +8,18 @@ import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import org.junit.runner.RunWith
+import org.junit.runners.JUnit4
 
+@RunWith(JUnit4::class)
 class NetworkProductRepositoryTest {
 
     private val apiService: ApiService = mockk()
     private val repository = NetworkProductRepository(apiService)
 
     @Test
-    fun `getProducts maps response to domain`() = runTest {
+    fun `obtenerProductos mapea la respuesta del servicio`() = runTest {
+        // Se espera que cada ProductResponse se convierta correctamente a Product.
         val response = listOf(
             ProductResponse(
                 codigo = "P1",
@@ -39,7 +43,8 @@ class NetworkProductRepositoryTest {
     }
 
     @Test
-    fun `getProducts returns empty list when service returns empty`() = runTest {
+    fun `obtenerProductos retorna lista vacia cuando el servicio no tiene datos`() = runTest {
+        // Se espera que el repositorio devuelva una lista vacía sin lanzar errores.
         coEvery { apiService.getProducts() } returns emptyList()
 
         val result = repository.getProducts()
@@ -47,4 +52,3 @@ class NetworkProductRepositoryTest {
         assertTrue(result.isEmpty())
     }
 }
-

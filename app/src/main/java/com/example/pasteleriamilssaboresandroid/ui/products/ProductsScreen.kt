@@ -170,12 +170,14 @@ private fun ProductList(products: List<Product>, onAdd: (Product) -> Unit, onOpe
 @Composable
 private fun ProductItem(p: Product, onAdd: (Product) -> Unit, onOpen: (String) -> Unit) {
     val context = LocalContext.current
-    val assetPath = p.image?.let { "file:///android_asset/$it" }
+    val imageUrl = p.productImage?.takeIf { it.isNotBlank() }
     val painter = rememberAsyncImagePainter(
-        model = ImageRequest.Builder(context)
-            .data(assetPath)
-            .crossfade(true)
-            .build()
+        model = imageUrl?.let {
+            ImageRequest.Builder(context)
+                .data(it)
+                .crossfade(true)
+                .build()
+        }
     )
 
     Card(
@@ -183,7 +185,7 @@ private fun ProductItem(p: Product, onAdd: (Product) -> Unit, onOpen: (String) -
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.tertiary)
     ) {
         Row(modifier = Modifier.fillMaxWidth().padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
-            if (assetPath != null) {
+            if (!imageUrl.isNullOrBlank()) {
                 Image(
                     painter = painter,
                     contentDescription = p.name,

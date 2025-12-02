@@ -52,7 +52,8 @@ class NetworkCheckoutRepositoryTest {
     )
 
     @Test
-    fun `checkout sends mapped request and returns order`() = runTest {
+    fun `checkout envia request mapeado y retorna orden`() = runTest {
+        // Verifica que los datos del Order se transforman en CheckoutRequest y se recibe la orden creada.
         val requestSlot = slot<CheckoutRequest>()
         coEvery { apiService.checkout(capture(requestSlot)) } returns OrderResponse(
             id = "1",
@@ -98,7 +99,8 @@ class NetworkCheckoutRepositoryTest {
     }
 
     @Test
-    fun `checkout maps http exception to failure`() = runTest {
+    fun `checkout convierte HttpException en fallo`() = runTest {
+        // Asegura que los errores HTTP del backend se propaguen como Result failure.
         val httpException = HttpException(Response.error<Unit>(400, okhttp3.ResponseBody.create(null, "Bad Request")))
         coEvery { apiService.checkout(any()) } throws httpException
 
@@ -108,4 +110,3 @@ class NetworkCheckoutRepositoryTest {
         assertTrue(result.exceptionOrNull() is Exception)
     }
 }
-

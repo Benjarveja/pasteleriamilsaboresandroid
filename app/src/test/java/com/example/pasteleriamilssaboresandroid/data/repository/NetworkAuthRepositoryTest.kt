@@ -20,7 +20,8 @@ class NetworkAuthRepositoryTest {
     private val repository = NetworkAuthRepository(apiService)
 
     @Test
-    fun `login caches and returns user`() = runTest {
+    fun `login cachea y retorna usuario`() = runTest {
+        // Verifica que el login envía las credenciales y cachea al usuario autenticado.
         val requestSlot = slot<AuthRequest>()
         coEvery { apiService.login(capture(requestSlot)) } returns AuthResponse(
             token = "jwt",
@@ -40,7 +41,8 @@ class NetworkAuthRepositoryTest {
     }
 
     @Test
-    fun `register stores full name`() = runTest {
+    fun `register almacena nombre completo`() = runTest {
+        // Garantiza que el nombre y apellido se concatenan y quedan en caché tras registrarse.
         coEvery { apiService.register(any()) } returns AuthResponse(
             token = "jwt",
             refreshToken = "refresh",
@@ -67,7 +69,8 @@ class NetworkAuthRepositoryTest {
     }
 
     @Test
-    fun `updateUser refreshes cache`() = runTest {
+    fun `updateUser refresca la cache`() = runTest {
+        // Comprueba que al actualizar el usuario en el backend, la caché local se sincroniza.
         val updated = User(id = "1", name = "Name", email = "mail@example.com")
         coEvery { apiService.updateUser("1", updated) } returns updated
 
@@ -78,7 +81,8 @@ class NetworkAuthRepositoryTest {
     }
 
     @Test
-    fun `logout clears cache`() = runTest {
+    fun `logout limpia la cache`() = runTest {
+        // Asegura que la sesión en memoria se elimina al cerrar sesión.
         coEvery { apiService.login(any()) } returns AuthResponse(
             token = "jwt",
             refreshToken = "refresh",
@@ -93,4 +97,3 @@ class NetworkAuthRepositoryTest {
         assertNull(repository.getCurrentUser())
     }
 }
-

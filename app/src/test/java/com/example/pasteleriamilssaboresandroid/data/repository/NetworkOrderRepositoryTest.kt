@@ -50,7 +50,8 @@ class NetworkOrderRepositoryTest {
     )
 
     @Test
-    fun `getMyOrders returns mapped orders`() = runTest {
+    fun `getMyOrders retorna ordenes mapeadas`() = runTest {
+        // Comprueba que la respuesta del backend se convierte en modelo de dominio con sus items.
         coEvery { apiService.getMyOrders() } returns listOf(sampleResponse())
 
         val result = repository.getMyOrders()
@@ -64,7 +65,8 @@ class NetworkOrderRepositoryTest {
     }
 
     @Test
-    fun `getMyOrders maps error`() = runTest {
+    fun `getMyOrders propaga errores`() = runTest {
+        // Valida que una HttpException se traduzca en un Result failure.
         val httpException = HttpException(Response.error<Unit>(403, okhttp3.ResponseBody.create(null, "Forbidden")))
         coEvery { apiService.getMyOrders() } throws httpException
 
