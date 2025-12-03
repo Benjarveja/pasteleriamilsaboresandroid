@@ -14,27 +14,27 @@ import retrofit2.http.PUT
 import retrofit2.http.Path
 
 interface ApiService {
-    @GET("api/products")
+    @GET("products")
     suspend fun getProducts(): List<ProductResponse>
 
-    @GET("api/products/{codigo}")
+    @GET("products/{codigo}")
     suspend fun getProductByCodigo(@Path("codigo") codigo: String): ProductResponse
 
-    @POST("api/auth/login")
+    @POST("auth/login")
     suspend fun login(@Body request: AuthRequest): AuthResponse
 
-    @POST("api/auth/register")
+    @POST("auth/register")
     suspend fun register(@Body request: RegisterRequest): AuthResponse
 
-    @PUT("api/users/{id}")
+    @PUT("users/{id}")
     suspend fun updateUser(@Path("id") id: String, @Body user: User): User
 
-    @POST("api/checkout")
+    @POST("checkout")
     suspend fun checkout(@Body request: CheckoutRequest): com.example.pasteleriamilssaboresandroid.data.network.dto.OrderResponse
 
-    @GET("api/orders/me")
+    @GET("orders/me")
     suspend fun getMyOrders(): List<com.example.pasteleriamilssaboresandroid.data.network.dto.OrderResponse>
 
-    @GET("api/users/me")
+    @GET("users/me")
     suspend fun getMe(): UserResponse
 }

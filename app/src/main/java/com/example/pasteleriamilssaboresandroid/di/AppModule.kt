@@ -4,7 +4,7 @@ import android.content.Context
 import com.example.pasteleriamilssaboresandroid.data.local.TokenManager
 import com.example.pasteleriamilssaboresandroid.data.network.ApiService
 import com.example.pasteleriamilssaboresandroid.data.network.AuthInterceptor
-import com.example.pasteleriamilssaboresandroid.data.network.RetrofitClient
+import com.example.pasteleriamilssaboresandroid.data.network.NetworkConfig
 import com.example.pasteleriamilssaboresandroid.data.repository.AuthRepository
 import com.example.pasteleriamilssaboresandroid.data.repository.NetworkAuthRepository
 import com.example.pasteleriamilssaboresandroid.data.repository.NetworkCheckoutRepository
@@ -30,7 +30,7 @@ class AppModule(private val appContext: Context) {
     private val apiService: ApiService by lazy {
         Retrofit.Builder()
             .client(okHttpClient)
-            .baseUrl("http://10.0.2.2:8080/")
+            .baseUrl(NetworkConfig.baseUrl)
             .addConverterFactory(GsonConverterFactory.create())
             .build()
             .create(ApiService::class.java)

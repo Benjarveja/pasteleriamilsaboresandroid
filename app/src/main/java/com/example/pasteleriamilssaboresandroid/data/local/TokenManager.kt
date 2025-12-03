@@ -16,5 +16,8 @@ class TokenManager(context: Context) {
     fun clear() {
         prefs.edit().clear().apply()
     }
-}
 
+    // Indica si existe un token válido almacenado (solo presencia, no validación remota)
+    val isLoggedIn: Boolean
+        get() = !token.isNullOrBlank()
+}

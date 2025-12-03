@@ -5,6 +5,7 @@ import com.example.pasteleriamilssaboresandroid.data.api.AuthApiService
 import com.example.pasteleriamilssaboresandroid.data.database.AppDatabase
 import com.example.pasteleriamilssaboresandroid.data.database.order.OrderRepository as DatabaseOrderRepository
 import com.example.pasteleriamilssaboresandroid.data.network.ApiService
+import com.example.pasteleriamilssaboresandroid.data.network.NetworkConfig
 import com.example.pasteleriamilssaboresandroid.data.repository.AuthRepository
 import com.example.pasteleriamilssaboresandroid.data.repository.AuthRepositoryImpl
 import com.example.pasteleriamilssaboresandroid.data.repository.CartRepository
@@ -30,7 +31,7 @@ interface AppContainer {
 }
 
 class DefaultAppContainer(private val context: Context) : AppContainer {
-    private val baseUrl = "http://10.0.2.2:8080/"
+    private val baseUrl = NetworkConfig.baseUrl
 
     private val tokenManager: TokenManager by lazy { TokenManager(context) }
 

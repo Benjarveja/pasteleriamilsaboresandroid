@@ -7,6 +7,7 @@ import com.example.pasteleriamilssaboresandroid.data.network.dto.AuthRequest
 import com.example.pasteleriamilssaboresandroid.data.network.dto.RegisterRequest
 import com.example.pasteleriamilssaboresandroid.data.network.dto.UserResponse
 import com.example.pasteleriamilssaboresandroid.domain.model.User
+import retrofit2.HttpException
 
 class AuthRepositoryImpl(
     private val apiService: ApiService,
@@ -65,7 +66,15 @@ class AuthRepositoryImpl(
 
     override suspend fun getCurrentUser(): User? {
         if (cachedUser == null) {
-            cachedUser = runCatching { apiService.getMe().toDomain() }.getOrNull()
+            // Intentamos pedir el usuario; si la API responde 401/403, limpiamos el token local.
+            cachedUser = try {
+                apiService.getMe().toDomain()
+            } catch (e: HttpException) {
+                if (e.code() == 401 || e.code() == 403) {
+                    tokenManager.clear()
+                }
+                null
+            }
         }
         return cachedUser
     }

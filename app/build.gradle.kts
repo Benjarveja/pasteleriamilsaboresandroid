@@ -1,3 +1,4 @@
+import java.util.Properties
 import org.gradle.testing.jacoco.tasks.JacocoReport
 
 plugins {
@@ -8,6 +9,17 @@ plugins {
     id("com.google.devtools.ksp") version "1.9.24-1.0.20"
     id("kotlin-kapt")
     id("jacoco")
+}
+
+val localProperties = Properties().apply {
+    val file = rootProject.file("local.properties")
+    if (file.exists()) {
+        file.inputStream().use { load(it) }
+    }
+}
+val defaultApiUrl = "http://3.80.65.97:8080/api/"
+val baseApiUrl = (localProperties.getProperty("BASE_API_URL") ?: defaultApiUrl).let {
+    if (it.endsWith("/")) it else "$it/"
 }
 
 android {
@@ -22,6 +34,7 @@ android {
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        buildConfigField("String", "BASE_API_URL", "\"$baseApiUrl\"")
     }
 
     signingConfigs {
@@ -51,6 +64,7 @@ android {
     }
     buildFeatures {
         compose = true
+        buildConfig = true
     }
 }
 

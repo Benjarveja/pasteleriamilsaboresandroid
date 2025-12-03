@@ -10,7 +10,8 @@ class AuthInterceptor(private val tokenManager: TokenManager) : Interceptor {
         val originalRequest = chain.request()
         val token = tokenManager.token
 
-        val requestToProceed = if (token != null && shouldAttachToken(originalRequest.url)) {
+        // Si hay token y la ruta lo requiere, lo añadimos; si no, dejamos pasar la petición sin Authorization.
+        val requestToProceed = if (!token.isNullOrBlank() && shouldAttachToken(originalRequest.url)) {
             originalRequest.newBuilder()
                 .addHeader("Authorization", "Bearer $token")
                 .build()
@@ -19,6 +20,7 @@ class AuthInterceptor(private val tokenManager: TokenManager) : Interceptor {
         }
 
         val response = chain.proceed(requestToProceed)
+        // Si el backend responde con no autorizado, limpiamos el token local para forzar re-login.
         if (response.code == 401 || response.code == 403) {
             tokenManager.clear()
         }
@@ -27,6 +29,8 @@ class AuthInterceptor(private val tokenManager: TokenManager) : Interceptor {
 
     private fun shouldAttachToken(url: HttpUrl): Boolean {
         val path = url.encodedPath
-        return !path.startsWith("/api/auth") && !path.startsWith("/api/products")
+        // No agregar token para endpoints públicos como auth (login/register) o products (lista y detalle).
+        // Se asume que las rutas del ApiService son: api/auth, api/products, etc.
+        return !(path.startsWith("/api/auth") || path.startsWith("/api/products"))
     }
 }
